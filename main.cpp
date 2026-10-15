@@ -36,6 +36,34 @@ int main()
     std::cout << "Tracks: " << midiFile.getNumTracks() << "\n";
     std::cout << "Timing division: "
               << midiFile.getTimeFormat() << "\n";
+              
+    for (int trackIndex = 0; trackIndex < midiFile.getNumTracks(); ++trackIndex)
+    {
+        const auto* track = midiFile.getTrack(trackIndex);
+
+        std::cout << "\nTrack " << trackIndex << "\n";
+
+        for (int i = 0; i < track->getNumEvents(); ++i)
+        {
+            const auto& message = track->getEventPointer(i)->message;
+
+            if (message.isNoteOn())
+            {
+                std::cout << "Note On  | Pitch: "
+                        << message.getNoteNumber()
+                        << " | Velocity: " << static_cast<int>(message.getVelocity())
+                        << " | Tick: " << message.getTimeStamp()
+                        << "\n";
+            }
+            else if (message.isNoteOff())
+            {
+                std::cout << "Note Off | Pitch: "
+                        << message.getNoteNumber()
+                        << " | Tick: " << message.getTimeStamp()
+                        << "\n";
+            }
+        }
+    }
 
     return 0;
 }
