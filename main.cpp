@@ -9,7 +9,7 @@ int main()
     juce::File midiPath =
         juce::File::getCurrentWorkingDirectory()
             .getChildFile("test-data")
-            .getChildFile("day3_test.mid");
+            .getChildFile("test.mid");
 
     // Step 2: Open the file
     juce::FileInputStream input(midiPath);
