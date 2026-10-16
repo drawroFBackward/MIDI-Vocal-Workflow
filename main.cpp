@@ -64,8 +64,10 @@ int main()
                         << "\n";
             }
         }
+        
+    }
 
-        Note testNote(60, 100, 0.0, 1.0);
+    Note testNote(60, 100, 0.0, 1.0);
 
         std::cout << "\nTest Note:\n";
         std::cout << "Pitch: " << testNote.pitch
@@ -73,7 +75,6 @@ int main()
                     << " | Start Tick: " << testNote.startTick
                     << " | Duration: " << testNote.duration
                     << "\n";    
-    }
 
     return 0;
 }
