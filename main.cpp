@@ -3,6 +3,7 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <iostream>
 #include "melody.h"
+#include <vector>
 
 int main()
 {
@@ -66,15 +67,36 @@ int main()
         }
         
     }
-
-    Note testNote(60, 100, 0.0, 1.0);
+    /*
+    Note testNote(60, 100, 0.0, 480.0);
 
         std::cout << "\nTest Note:\n";
         std::cout << "Pitch: " << testNote.pitch
                     << " | Velocity: " << testNote.velocity
                     << " | Start Tick: " << testNote.startTick
                     << " | Duration: " << testNote.duration
-                    << "\n";    
+                    << "\n";
+    */
+
+    
+    std::vector<Note> notes;
+
+    notes.emplace_back(72, 60, 0.0, 480.0);
+    notes.emplace_back(76, 80, 480.0, 480.0);
+    notes.emplace_back(79, 100, 960.0, 480.0);
+    notes.emplace_back(84, 120, 1440.0, 480.0);
+
+    std::cout << "\nOur melody:\n";
+
+    for (const Note& note : notes)
+    {
+        std::cout << "Pitch: " << note.pitch
+                << " | Velocity: " << note.velocity
+                << " | Start: " << note.startTick
+                << " | Duration: " << note.duration
+                << "\n";
+    }
+
 
     return 0;
 }
