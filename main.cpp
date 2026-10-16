@@ -2,6 +2,7 @@
 #include <juce_core/juce_core.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <iostream>
+#include "melody.h"
 
 int main()
 {
@@ -63,6 +64,15 @@ int main()
                         << "\n";
             }
         }
+
+        Note testNote(60, 100, 0.0, 1.0);
+
+        std::cout << "\nTest Note:\n";
+        std::cout << "Pitch: " << testNote.pitch
+                    << " | Velocity: " << testNote.velocity
+                    << " | Start Tick: " << testNote.startTick
+                    << " | Duration: " << testNote.duration
+                    << "\n";    
     }
 
     return 0;
