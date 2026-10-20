@@ -32,12 +32,14 @@ int main()
         return 1;
     }
 
-    // Step 4: Display information
+    // Step 4: Save notes to a vector of Note structs
     std::cout << "MIDI file loaded successfully!\n";
     std::cout << "File type: " << fileType << "\n";
     std::cout << "Tracks: " << midiFile.getNumTracks() << "\n";
     std::cout << "Timing division: "
               << midiFile.getTimeFormat() << "\n";
+
+    std::vector<Note> notes;
               
     for (int trackIndex = 0; trackIndex < midiFile.getNumTracks(); ++trackIndex)
     {
@@ -49,20 +51,24 @@ int main()
         {
             const auto& message = track->getEventPointer(i)->message;
 
-            if (message.isNoteOn())
+            if (message.isNoteOn() && message.getVelocity() > 0)
             {
-                std::cout << "Note On  | Pitch: "
-                        << message.getNoteNumber()
-                        << " | Velocity: " << static_cast<int>(message.getVelocity())
-                        << " | Tick: " << message.getTimeStamp()
-                        << "\n";
+                notes.emplace_back(message.getNoteNumber(),
+                                   static_cast<int>(message.getVelocity()),
+                                   message.getTimeStamp(),
+                                   0.0); // Duration will be calculated later
             }
-            else if (message.isNoteOff())
+            else if (message.isNoteOff() || (message.isNoteOn() && message.getVelocity() == 0))
             {
-                std::cout << "Note Off | Pitch: "
-                        << message.getNoteNumber()
-                        << " | Tick: " << message.getTimeStamp()
-                        << "\n";
+                // Find the corresponding note on event and calculate its duration
+                for (auto& note : notes)
+                {
+                    if (note.pitch == message.getNoteNumber() && note.duration == 0.0)
+                    {
+                        note.duration = message.getTimeStamp() - note.startTick;
+                        break;
+                    }
+                }
             }
         }
         
@@ -79,13 +85,7 @@ int main()
     */
 
     
-    std::vector<Note> notes;
-
-    notes.emplace_back(72, 60, 0.0, 480.0);
-    notes.emplace_back(76, 80, 480.0, 480.0);
-    notes.emplace_back(79, 100, 960.0, 480.0);
-    notes.emplace_back(84, 120, 1440.0, 480.0);
-
+    
     std::cout << "\nOur melody:\n";
 
     for (const Note& note : notes)
