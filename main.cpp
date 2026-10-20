@@ -55,6 +55,8 @@ int main()
             {
                 notes.emplace_back(message.getNoteNumber(),
                                    static_cast<int>(message.getVelocity()),
+                                   trackIndex,
+                                   message.getChannel(),
                                    message.getTimeStamp(),
                                    0.0); // Duration will be calculated later
             }
@@ -63,7 +65,7 @@ int main()
                 // Find the corresponding note on event and calculate its duration
                 for (auto& note : notes)
                 {
-                    if (note.pitch == message.getNoteNumber() && note.duration == 0.0)
+                    if (note.pitch == message.getNoteNumber() && note.duration == 0.0 && note.track == trackIndex && note.channel == message.getChannel())
                     {
                         note.duration = message.getTimeStamp() - note.startTick;
                         break;
