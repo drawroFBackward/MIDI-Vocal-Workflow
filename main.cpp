@@ -96,6 +96,8 @@ int main()
                 << " | Velocity: " << note.velocity
                 << " | Start: " << note.startTick
                 << " | Duration: " << note.duration
+                << " | Track: " << note.track
+                << " | Channel: " << note.channel
                 << "\n";
     }
 
