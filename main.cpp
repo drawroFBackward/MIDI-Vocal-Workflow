@@ -65,9 +65,10 @@ int main()
                 // Find the corresponding note on event and calculate its duration
                 for (auto& note : notes)
                 {
-                    if (note.pitch == message.getNoteNumber() && note.duration == 0.0 && note.track == trackIndex && note.channel == message.getChannel())
+                    if (note.pitch == message.getNoteNumber() && !note.isComplete && note.track == trackIndex && note.channel == message.getChannel())
                     {
                         note.duration = message.getTimeStamp() - note.startTick;
+                        note.isComplete = true;
                         break;
                     }
                 }
@@ -98,6 +99,7 @@ int main()
                 << " | Duration: " << note.duration
                 << " | Track: " << note.track
                 << " | Channel: " << note.channel
+                << " | Complete: " << (note.isComplete ? "Yes" : "No")
                 << "\n";
     }
 
