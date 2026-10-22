@@ -14,6 +14,7 @@ juce_add_console_app(MIDIVocalWorkflow
 target_sources(MIDIVocalWorkflow
     PRIVATE
         main.cpp
+        functions.cpp
 )
 
 target_link_libraries(MIDIVocalWorkflow
