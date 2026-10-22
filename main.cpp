@@ -60,7 +60,6 @@ int main()
                                    message.getChannel(),
                                    message.getTimeStamp(),
                                    0.0); // Duration will be calculated later
-                completeNotesCount++;
             }
             else if (message.isNoteOff() || (message.isNoteOn() && message.getVelocity() == 0))
             {
@@ -71,6 +70,7 @@ int main()
                     {
                         note.duration = message.getTimeStamp() - note.startTick;
                         note.isComplete = true;
+                        ++completeNotesCount;
                         break;
                     }
                 }
