@@ -2,46 +2,30 @@
 
 juce::File filePath(std::string path)
 {
-    try
+    juce::File midiPath(path);
+    if (!midiPath.existsAsFile())
     {
-        juce::File midiPath(path);
-        if (!midiPath.existsAsFile())
-        {
-            throw std::runtime_error("MIDI file does not exist at the specified path.");
-        }
-        return midiPath;
+        throw std::runtime_error("MIDI file does not exist at the specified path.");
     }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-    }
-    return {}; // Return an empty File in case of error
+    return midiPath;
 }
 
 juce::MidiFile readMidiFile(const std::string& path)
 {
-    try
+    juce::FileInputStream input(filePath(path));
+    if (!input.openedOk())
     {
-        juce::FileInputStream input(filePath(path));
-        if (!input.openedOk())
-        {
-            throw std::runtime_error("Failed to open MIDI file");
-        }
-
-        juce::MidiFile midiFile;
-        int fileType = -1;
-
-        if (!midiFile.readFrom(input, true, &fileType))
-        {
-            throw std::runtime_error("Failed to read MIDI data");
-        }
-        return midiFile;
+        throw std::runtime_error("Failed to open MIDI file");
     }
-    catch(const std::exception& e)
+
+    juce::MidiFile midiFile;
+    int fileType = -1;
+
+    if (!midiFile.readFrom(input, true, &fileType))
     {
-        std::cerr << e.what() << '\n';
+        throw std::runtime_error("Failed to read MIDI data");
     }
-    return {}; // Return an empty MidiFile in case of error
+    return midiFile;
 }
 
 std::vector<Note> extractNotes(const juce::MidiFile& midiFile)

@@ -10,11 +10,19 @@ int main()
     // Step 1: Specify the path to your MIDI file
     std::string midiFilePath = "C:\\Users\\C30413\\source\\repos\\MIDI-Vocal-Workflow\\test-data\\test.mid";
 
-    // Step 2: Read the MIDI file
-    auto midiFile = readMidiFile(midiFilePath);
-
-    // Step 3: Extract notes from the MIDI file
-    std::vector<Note> notes = extractNotes(midiFile);
+    // Step 2: Read the MIDI file, extract notes, and handle exceptions
+    juce::MidiFile midiFile;
+    std::vector<Note> notes;
+    try
+    {
+        midiFile = readMidiFile(midiFilePath);
+        notes = extractNotes(midiFile);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << e.what() << "\n";
+        return 1;
+    }
 
     // Reading report
 
