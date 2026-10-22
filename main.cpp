@@ -1,82 +1,21 @@
-
-#include <juce_core/juce_core.h>
-#include <juce_audio_basics/juce_audio_basics.h>
+#pragma once
 #include <iostream>
 #include "melody.h"
+#include "functions.h"
 #include <vector>
+#include <algorithm>
 
 int main()
 {
-    // Step 1: Find our test file
-    juce::File midiPath =
-        juce::File::getCurrentWorkingDirectory()
-            .getChildFile("test-data")
-            .getChildFile("test.mid");
+    // Step 1: Specify the path to your MIDI file
+    std::string midiFilePath = "C:\\Users\\C30413\\source\\repos\\MIDI-Vocal-Workflow\\test.mid";
 
-    // Step 2: Open the file
-    juce::FileInputStream input(midiPath);
+    // Step 2: Read the MIDI file
+    auto midiFile = readMidiFile(midiFilePath);
 
-    if (!input.openedOk())
-    {
-        std::cerr << "Could not open MIDI file.\n";
-        return 1;
-    }
+    // Step 3: Extract notes from the MIDI file
+    std::vector<Note> notes = extractNotes(midiFile);
 
-    // Step 3: Read MIDI data from the file
-    juce::MidiFile midiFile;
-    int fileType = -1;
-
-    if (!midiFile.readFrom(input, true, &fileType))
-    {
-        std::cerr << "Failed to read MIDI data.\n";
-        return 1;
-    }
-
-    // Step 4: Save notes to a vector of Note structs
-    std::cout << "MIDI file loaded successfully!\n";
-    std::cout << "File type: " << fileType << "\n";
-    std::cout << "Tracks: " << midiFile.getNumTracks() << "\n";
-    std::cout << "Timing division: "
-              << midiFile.getTimeFormat() << "\n";
-
-    std::vector<Note> notes;
-              
-    for (int trackIndex = 0; trackIndex < midiFile.getNumTracks(); ++trackIndex)
-    {
-        const auto* track = midiFile.getTrack(trackIndex);
-
-        std::cout << "\nTrack " << trackIndex << "\n";
-
-        for (int i = 0; i < track->getNumEvents(); ++i)
-        {
-            const auto& message = track->getEventPointer(i)->message;
-
-            if (message.isNoteOn() && message.getVelocity() > 0)
-            {
-                notes.emplace_back(message.getNoteNumber(),
-                                   static_cast<int>(message.getVelocity()),
-                                   trackIndex,
-                                   message.getChannel(),
-                                   message.getTimeStamp(),
-                                   0.0); // Duration will be calculated later
-            }
-            else if (message.isNoteOff() || (message.isNoteOn() && message.getVelocity() == 0))
-            {
-                // Find the corresponding note on event and calculate its duration
-                for (auto& note : notes)
-                {
-                    if (note.pitch == message.getNoteNumber() && !note.isComplete && note.track == trackIndex && note.channel == message.getChannel())
-                    {
-                        note.duration = message.getTimeStamp() - note.startTick;
-                        note.isComplete = true;
-                        break;
-                    }
-                }
-            }
-        }
-        
-    }
-    
     // Reading report
 
     std::cout << "\nTotal notes read: " << notes.size() << "\n";
