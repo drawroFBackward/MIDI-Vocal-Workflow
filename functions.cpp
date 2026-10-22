@@ -2,23 +2,30 @@
 
 juce::File filePath(std::string path)
 {
-    juce::File midiPath(path);
-    if (!midiPath.existsAsFile())
+    try
     {
-        throw std::runtime_error("MIDI file does not exist at the specified path.");
+        juce::File midiPath(path);
+        if (!midiPath.existsAsFile())
+        {
+            throw std::runtime_error("MIDI file does not exist at the specified path.");
+        }
+        return midiPath;
     }
-    return midiPath;
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    return {}; // Return an empty File in case of error
 }
 
 juce::MidiFile readMidiFile(const std::string& path)
 {
-    juce::FileInputStream input(filePath(path));
-
     try
     {
+        juce::FileInputStream input(filePath(path));
         if (!input.openedOk())
         {
-            throw std::exception("Failed to open MIDI file:");
+            throw std::runtime_error("Failed to open MIDI file");
         }
 
         juce::MidiFile midiFile;
@@ -26,7 +33,7 @@ juce::MidiFile readMidiFile(const std::string& path)
 
         if (!midiFile.readFrom(input, true, &fileType))
         {
-            throw std::exception("Failed to read MIDI data");
+            throw std::runtime_error("Failed to read MIDI data");
         }
         return midiFile;
     }

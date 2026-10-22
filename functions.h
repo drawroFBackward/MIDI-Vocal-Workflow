@@ -4,6 +4,7 @@
 #include <vector>
 #include <juce_core/juce_core.h>
 #include <juce_audio_basics/juce_audio_basics.h>
+#include <exception>
 #include "melody.h"
 
 juce::File filePath(std::string path);
