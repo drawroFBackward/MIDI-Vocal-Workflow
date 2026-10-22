@@ -40,7 +40,6 @@ int main()
               << midiFile.getTimeFormat() << "\n";
 
     std::vector<Note> notes;
-    int completeNotesCount = 0;
               
     for (int trackIndex = 0; trackIndex < midiFile.getNumTracks(); ++trackIndex)
     {
@@ -70,7 +69,6 @@ int main()
                     {
                         note.duration = message.getTimeStamp() - note.startTick;
                         note.isComplete = true;
-                        ++completeNotesCount;
                         break;
                     }
                 }
@@ -82,11 +80,12 @@ int main()
     // Reading report
 
     std::cout << "\nTotal notes read: " << notes.size() << "\n";
-    std::cout << "Complete notes: " << completeNotesCount << "\n";
-    std::cout << "Incomplete notes: " << (notes.size() - completeNotesCount) << "\n";
+    int incompleteNotes = std::count_if(notes.begin(), notes.end(), [](const Note& n) { return !n.isComplete; });
+    std::cout << "Complete notes: " << (notes.size() - incompleteNotes) << "\n";
+    std::cout << "Incomplete notes: " << incompleteNotes << "\n";
 
     // Raise a warning if there are incomplete notes
-    if (completeNotesCount < notes.size())
+    if (incompleteNotes)
     {
         std::cerr << "Warning: There are incomplete notes in the MIDI file.\n";
     }
