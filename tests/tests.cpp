@@ -35,7 +35,7 @@ void overlapTest::runTest() {
         expectEquals(static_cast<int>(notes.size()), 2);
         if (notes.size() < 2) return;
         for (const auto& note : notes) {
-            expectEquals(note.pitch, 60);// can be deleted?
+            expectEquals(note.pitch, 60);
             if (note.channel == 1) {
                 expectEquals(note.startTick, 0.0);
                 expectEquals(note.duration, 960.0);
@@ -48,5 +48,18 @@ void overlapTest::runTest() {
                 expect(false); // Unexpected channel
             }
         }
+    });
+}
+
+void completeNoteTest::runTest() {
+    testCase("Verify if incomplete notes are caught correctly", [&] {
+        juce::MidiMessageSequence t;
+        t.addEvent(juce::MidiMessage::noteOn(1, 60, (juce::uint8)80), 1.0);
+        juce::MidiFile midiFile;
+        midiFile.addTrack(t);
+        auto notes = extractNotes(midiFile);
+        expectEquals(static_cast<int>(notes.size()), 1);
+        if (notes.empty()) return;
+        expect(notes[0].isComplete);
     });
 }
