@@ -66,5 +66,6 @@ void incompleteNoteTest::runTest() {
         expectEquals(notes[0].track, 0);
         expectEquals(notes[0].channel, 1);
         expectEquals(notes[0].startTick, 1.0);
+        expectEquals(notes[0].duration, 0.0);
     });
 }
