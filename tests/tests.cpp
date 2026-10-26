@@ -51,7 +51,7 @@ void overlapTest::runTest() {
     });
 }
 
-void completeNoteTest::runTest() {
+void incompleteNoteTest::runTest() {
     testCase("Verify if incomplete notes are caught correctly", [&] {
         juce::MidiMessageSequence t;
         t.addEvent(juce::MidiMessage::noteOn(1, 60, (juce::uint8)80), 1.0);
@@ -60,6 +60,11 @@ void completeNoteTest::runTest() {
         auto notes = extractNotes(midiFile);
         expectEquals(static_cast<int>(notes.size()), 1);
         if (notes.empty()) return;
-        expect(notes[0].isComplete);
+        expect(!notes[0].isComplete);
+        expectEquals(notes[0].pitch, 60);
+        expectEquals(notes[0].velocity, 80);
+        expectEquals(notes[0].track, 0);
+        expectEquals(notes[0].channel, 1);
+        expectEquals(notes[0].startTick, 1.0);
     });
 }
