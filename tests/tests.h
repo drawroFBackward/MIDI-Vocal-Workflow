@@ -25,3 +25,10 @@ class incompleteNoteTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+class zeroDurationNoteTest : public juce::UnitTest{
+    public:
+        zeroDurationNoteTest() : juce::UnitTest("Zero Duration Note Test") {}
+
+        void runTest() override;
+};
