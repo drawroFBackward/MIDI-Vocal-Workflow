@@ -8,7 +8,7 @@
 int main()
 {
     // Step 1: Specify the path to your MIDI file
-    std::string midiFilePath = "C:\\Users\\C30413\\source\\repos\\MIDI-Vocal-Workflow\\test-data\\test.mid";
+    std::string midiFilePath = "test-data\\test.mid";
 
     // Step 2: Read the MIDI file, extract notes, and handle exceptions
     juce::MidiFile midiFile;
