@@ -73,23 +73,21 @@ void incompleteNoteTest::runTest() {
 void zeroDurationNoteTest::runTest() {
     testCase("Verify if zero duration notes are handled correctly", [&] {
         juce::MidiMessageSequence t;
-        t.addEvent(juce::MidiMessage::noteOn(1, 60, (juce::uint8)80), 1.0);
-        t.addEvent(juce::MidiMessage::noteOff(1, 60), 1.0); // Note off at the same tick
-        // Make sure Note on is added before Note off
-        if (t.getEventPointer(0)->message.isNoteOff()) {
-            // Swap the events to ensure Note on comes first (not sure what to do here)
-        }
+        t.addEvent(juce::MidiMessage::noteOn(1, 62, (juce::uint8)75), 240.0);
+        t.addEvent(juce::MidiMessage::noteOff(1, 62), 240.0); // Note off at the same tick
+        expect(t.getEventPointer(0)->message.isNoteOn());
+        expect(t.getEventPointer(1)->message.isNoteOff());
         juce::MidiFile midiFile;
         midiFile.addTrack(t);
         auto notes = extractNotes(midiFile);
         expectEquals(static_cast<int>(notes.size()), 1);
         if (notes.empty()) return;
         expect(notes[0].isComplete);
-        expectEquals(notes[0].pitch, 60);
-        expectEquals(notes[0].velocity, 80);
+        expectEquals(notes[0].pitch, 62);
+        expectEquals(notes[0].velocity, 75);
         expectEquals(notes[0].track, 0);
         expectEquals(notes[0].channel, 1);
-        expectEquals(notes[0].startTick, 1.0);
+        expectEquals(notes[0].startTick, 240.0);
         expectEquals(notes[0].duration, 0.0); // Duration should be zero
     });
 }

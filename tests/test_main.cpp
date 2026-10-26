@@ -4,6 +4,7 @@ int main() {
     noteTest A;
     overlapTest B;
     incompleteNoteTest C;
+    zeroDurationNoteTest D;
     juce::UnitTestRunner runner;
     runner.runAllTests();
     if (runner.getNumResults() == 0) {
