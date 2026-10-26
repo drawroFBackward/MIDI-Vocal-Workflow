@@ -8,7 +8,7 @@ void noteTest::runTest() {
         juce::MidiFile midiFile;
         midiFile.addTrack(t);
         auto notes = extractNotes(midiFile);
-        expect(!notes.empty());
+        expectEquals(static_cast<int>(notes.size()), 1);
         if (notes.empty()) return;
         expectEquals(notes[0].pitch, 60);
         expectEquals(notes[0].velocity, 80);
