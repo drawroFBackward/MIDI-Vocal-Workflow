@@ -22,3 +22,19 @@ target_link_libraries(MIDIVocalWorkflow
         juce::juce_core
         juce::juce_audio_basics
 )
+
+juce_add_console_app(MIDIVocalWorkflowTests
+    PRODUCT_NAME "MIDI Vocal Workflow Tests"
+)
+
+target_sources(MIDIVocalWorkflowTests
+    PRIVATE
+        tests/test_main.cpp
+        tests/tests.cpp
+)
+
+target_link_libraries(MIDIVocalWorkflowTests
+    PRIVATE
+        juce::juce_core
+        juce::juce_audio_basics
+)
