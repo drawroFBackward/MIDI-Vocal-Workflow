@@ -91,3 +91,23 @@ void zeroDurationNoteTest::runTest() {
         expectEquals(notes[0].duration, 0.0); // Duration should be zero
     });
 }
+
+void zeroVelocityNoteOnTest::runTest() {
+    testCase("Verify if zero velocity note on is treated as note off", [&] {
+        juce::MidiMessageSequence t;
+        t.addEvent(juce::MidiMessage::noteOn(3, 64, (juce::uint8)95), 120.0);
+        t.addEvent(juce::MidiMessage::noteOn(3, 64, (juce::uint8)0), 600.0); // Zero velocity note on
+        juce::MidiFile midiFile;
+        midiFile.addTrack(t);
+        auto notes = extractNotes(midiFile);
+        expectEquals(static_cast<int>(notes.size()), 1);
+        if (notes.empty()) return;
+        expect(notes[0].isComplete);
+        expectEquals(notes[0].pitch, 64);
+        expectEquals(notes[0].velocity, 95);
+        expectEquals(notes[0].track, 0);
+        expectEquals(notes[0].channel, 3);
+        expectEquals(notes[0].startTick, 120.0);
+        expectEquals(notes[0].duration, 480.0); // Duration should be from tick 120 to tick 600
+    });
+}

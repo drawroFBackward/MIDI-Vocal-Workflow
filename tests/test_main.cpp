@@ -5,6 +5,7 @@ int main() {
     overlapTest B;
     incompleteNoteTest C;
     zeroDurationNoteTest D;
+    zeroVelocityNoteOnTest E;
     juce::UnitTestRunner runner;
     runner.runAllTests();
     if (runner.getNumResults() == 0) {

@@ -32,3 +32,10 @@ class zeroDurationNoteTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+class zeroVelocityNoteOnTest : public juce::UnitTest{
+    public:
+        zeroVelocityNoteOnTest() : juce::UnitTest("Zero Velocity Note On Test") {}
+
+        void runTest() override;
+};
