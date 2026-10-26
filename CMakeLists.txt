@@ -27,10 +27,17 @@ juce_add_console_app(MIDIVocalWorkflowTests
     PRODUCT_NAME "MIDI Vocal Workflow Tests"
 )
 
+target_include_directories(
+    MIDIVocalWorkflowTests
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 target_sources(MIDIVocalWorkflowTests
     PRIVATE
         tests/test_main.cpp
         tests/tests.cpp
+        functions.cpp
 )
 
 target_link_libraries(MIDIVocalWorkflowTests
