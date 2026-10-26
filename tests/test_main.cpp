@@ -2,6 +2,7 @@
 
 int main() {
     noteTest A;
+    overlapTest B;
     juce::UnitTestRunner runner;
     runner.runAllTests();
     if (runner.getNumResults() == 0) {

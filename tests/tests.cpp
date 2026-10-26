@@ -19,3 +19,34 @@ void noteTest::runTest() {
         expect(notes[0].isComplete);
     });
 }
+
+void overlapTest::runTest() {
+    testCase("Verify if overlapping notes are handled correctly", [&] {
+        juce::MidiMessageSequence t;
+        // Channel 1 note starts at tick 0 and ends at tick 960
+        // Channel 2 note starts at tick 1 and ends at tick 481
+        t.addEvent(juce::MidiMessage::noteOn(1, 60, (juce::uint8)80), 0.0);
+        t.addEvent(juce::MidiMessage::noteOn(2, 60, (juce::uint8)90), 1.0); 
+        t.addEvent(juce::MidiMessage::noteOff(2, 60), 481.0);
+        t.addEvent(juce::MidiMessage::noteOff(1, 60), 960.0);
+        juce::MidiFile midiFile;
+        midiFile.addTrack(t);
+        auto notes = extractNotes(midiFile);
+        expectEquals(static_cast<int>(notes.size()), 2);
+        if (notes.size() < 2) return;
+        for (const auto& note : notes) {
+            expectEquals(note.pitch, 60);// can be deleted?
+            if (note.channel == 1) {
+                expectEquals(note.startTick, 0.0);
+                expectEquals(note.duration, 960.0);
+                expect(note.isComplete);
+            } else if (note.channel == 2) {
+                expectEquals(note.startTick, 1.0);
+                expectEquals(note.duration, 480.0);
+                expect(note.isComplete);
+            } else {
+                expect(false); // Unexpected channel
+            }
+        }
+    });
+}

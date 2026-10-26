@@ -11,3 +11,10 @@ class noteTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+class overlapTest : public juce::UnitTest{
+    public:
+        overlapTest() : juce::UnitTest("Overlap Test") {}
+
+        void runTest() override;
+};
