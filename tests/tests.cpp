@@ -1,13 +1,18 @@
 #include "tests.h"
 
+std::vector<Note> testExtractNotes(const juce::MidiMessageSequence& sequence, int trackIndex) {
+    juce::MidiFile midiFile;
+    midiFile.addTrack(sequence);
+    auto notes = extractNotes(midiFile);
+    return notes;
+}
+
 void noteTest::runTest() {
     testCase("Verify if note is read correctly", [&] {
         juce::MidiMessageSequence t;
         t.addEvent(juce::MidiMessage::noteOn(1, 60, (juce::uint8)80), 1.0);
         t.addEvent(juce::MidiMessage::noteOff(1, 60), 481.0);
-        juce::MidiFile midiFile;
-        midiFile.addTrack(t);
-        auto notes = extractNotes(midiFile);
+        auto notes = testExtractNotes(t);
         expectEquals(static_cast<int>(notes.size()), 1);
         if (notes.empty()) return;
         expectEquals(notes[0].pitch, 60);
@@ -29,9 +34,7 @@ void overlapTest::runTest() {
         t.addEvent(juce::MidiMessage::noteOn(2, 60, (juce::uint8)90), 1.0); 
         t.addEvent(juce::MidiMessage::noteOff(2, 60), 481.0);
         t.addEvent(juce::MidiMessage::noteOff(1, 60), 960.0);
-        juce::MidiFile midiFile;
-        midiFile.addTrack(t);
-        auto notes = extractNotes(midiFile);
+        auto notes = testExtractNotes(t);
         expectEquals(static_cast<int>(notes.size()), 2);
         if (notes.size() < 2) return;
         for (const auto& note : notes) {
@@ -55,9 +58,7 @@ void incompleteNoteTest::runTest() {
     testCase("Verify if incomplete notes are caught correctly", [&] {
         juce::MidiMessageSequence t;
         t.addEvent(juce::MidiMessage::noteOn(1, 60, (juce::uint8)80), 1.0);
-        juce::MidiFile midiFile;
-        midiFile.addTrack(t);
-        auto notes = extractNotes(midiFile);
+        auto notes = testExtractNotes(t);
         expectEquals(static_cast<int>(notes.size()), 1);
         if (notes.empty()) return;
         expect(!notes[0].isComplete);
@@ -77,9 +78,7 @@ void zeroDurationNoteTest::runTest() {
         t.addEvent(juce::MidiMessage::noteOff(1, 62), 240.0); // Note off at the same tick
         expect(t.getEventPointer(0)->message.isNoteOn());
         expect(t.getEventPointer(1)->message.isNoteOff());
-        juce::MidiFile midiFile;
-        midiFile.addTrack(t);
-        auto notes = extractNotes(midiFile);
+        auto notes = testExtractNotes(t);
         expectEquals(static_cast<int>(notes.size()), 1);
         if (notes.empty()) return;
         expect(notes[0].isComplete);
@@ -97,9 +96,7 @@ void zeroVelocityNoteOnTest::runTest() {
         juce::MidiMessageSequence t;
         t.addEvent(juce::MidiMessage::noteOn(3, 64, (juce::uint8)95), 120.0);
         t.addEvent(juce::MidiMessage::noteOn(3, 64, (juce::uint8)0), 600.0); // Zero velocity note on
-        juce::MidiFile midiFile;
-        midiFile.addTrack(t);
-        auto notes = extractNotes(midiFile);
+        auto notes = testExtractNotes(t);
         expectEquals(static_cast<int>(notes.size()), 1);
         if (notes.empty()) return;
         expect(notes[0].isComplete);
