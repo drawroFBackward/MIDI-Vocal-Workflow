@@ -37,6 +37,8 @@ void overlapTest::runTest() {
         auto notes = testExtractNotes(t);
         expectEquals(static_cast<int>(notes.size()), 2);
         if (notes.size() < 2) return;
+        expect(notes[0].channel ^ notes[1].channel == 1);
+        // expect(notes[0].channel ^ notes[1].channel == 2); // for channel 2, commented out due to redundancy
         for (const auto& note : notes) {
             expectEquals(note.pitch, 60);
             if (note.channel == 1) {
