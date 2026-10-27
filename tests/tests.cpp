@@ -1,6 +1,6 @@
 #include "tests.h"
 
-std::vector<Note> testExtractNotes(const juce::MidiMessageSequence& sequence, int trackIndex) {
+std::vector<Note> testExtractNotes(const juce::MidiMessageSequence& sequence) {
     juce::MidiFile midiFile;
     midiFile.addTrack(sequence);
     auto notes = extractNotes(midiFile);
@@ -37,8 +37,7 @@ void overlapTest::runTest() {
         auto notes = testExtractNotes(t);
         expectEquals(static_cast<int>(notes.size()), 2);
         if (notes.size() < 2) return;
-        expect(notes[0].channel ^ notes[1].channel == 1);
-        // expect(notes[0].channel ^ notes[1].channel == 2); // for channel 2, commented out due to redundancy
+        expect(!(notes[0].channel == notes[1].channel));// no need to verify that they are Ch1 and Ch2 as later the test will fail with unexpected channel
         for (const auto& note : notes) {
             expectEquals(note.pitch, 60);
             if (note.channel == 1) {

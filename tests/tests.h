@@ -5,7 +5,7 @@
 #include <juce_core/juce_core.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 
-std::vector<Note> testExtractNotes(const juce::MidiMessageSequence& sequence, int trackIndex = 0);
+std::vector<Note> testExtractNotes(const juce::MidiMessageSequence& sequence);
 
 class noteTest : public juce::UnitTest{
     public:

@@ -40,7 +40,7 @@ std::vector<Note> extractNotes(const juce::MidiFile& midiFile)
         {
             const auto& message = track->getEventPointer(i)->message;
 
-            if (message.isNoteOn() && message.getVelocity() > 0)
+            if (message.isNoteOn())
             {
                 notes.emplace_back(message.getNoteNumber(),
                                    static_cast<int>(message.getVelocity()),
@@ -49,7 +49,7 @@ std::vector<Note> extractNotes(const juce::MidiFile& midiFile)
                                    message.getTimeStamp(),
                                    0.0); // Duration will be calculated later
             }
-            else if (message.isNoteOff() || (message.isNoteOn() && message.getVelocity() == 0))
+            else if (message.isNoteOff())
             {
                 for (auto& note : notes)
                 {
