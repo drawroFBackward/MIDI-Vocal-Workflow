@@ -1,6 +1,6 @@
 # MIDI Vocal Workflow — Project Log
 
-**Version:** 0.3 — Approved for publication  
+**Version:** 0.4 — Week 1 review recorded  
 **Prepared:** 28 October 2026 (JST)  
 **Approval:** Approved for publication by user on 28 October 2026 (JST)  
 **Cadence:** One-page daily Markdown logs from study Day 7; weekly review every 7 study days; comprehensive delivery review every 8 calendar weeks.  
@@ -248,5 +248,19 @@ This is a **working proposal**, not a fixed feature contract. Study days and cal
 4. **To validate later:** Which Japanese lyric timing/phoneme constraints—including `ん`—actually require splitting a note versus adjusting phonemes within the existing note in VOCALOID6?
 5. **Documentation:** Begin the first one-page day entry **after Day 7 work**. Keep song-specific data out of public GitHub absent redistribution rights.
 
+
+## 10. Week 1 review — study Days 1–7 (28 October 2026, JST)
+
+**Review outcome:** All five Day 7 challenges passed, following targeted corrections. See [Day-07.md](../Day-by-Day%20Log/Day-07.md). This assessment covered retention of Days 1–6; no source code was changed and no new tests were executed during the review.
+
+**Practical progress:** JUCE/C++ console project with MIDI-file reading, extracted note records (pitch, velocity, track, channel, start tick, duration, completion state), five scenario-based automated tests, and a separate test executable. The first original/cleaned MIDI pair has been analyzed, producing benchmark figures and a clearer multi-vocal/lyrics pipeline; these are analysis results, not yet a working melody-selection implementation.
+
+**Concepts demonstrated:** MIDI Note On/Off matching across channels, tick-to-second conversion (480 PPQ, 120 BPM, 240 ticks = 0.25 s); references versus copies; O(MN) worst-case extraction cost; undefined behavior from unchecked vector indexing; data invariants (incomplete notes are valid, zero-duration completed notes are also valid); single-responsibility design, testing limitations, and measured baseline prioritization. On an illustrative classification problem with TP=20, FP=10 and FN=15, calculated precision 66.7%, recall 57.1%, F1 61.5%.
+
+**Reinforcement priorities:** (1) Timebase/tempo conversions; (2) Big O analysis and C++ container/reference lifetime; (3) distinction between incomplete and invalid data; (4) compute precision/recall/F1 from unrounded counts; (5) specify deterministic expected outputs for real musical edge cases, including arpeggiated accompaniment, added harmony lines, and repeated choruses with variations.
+
+**Week 2 adjustment:** Start with a simple, independently testable selection baseline; preserve source notes and candidate recoverability; compare against the original/cleaned benchmark rather than optimize prematurely or implement ML/UI. Keep a provisional preference for not losing genuine vocal notes, while recording false positives and manual-edit cost. The expected further MIDI examples are useful for cross-song validation but are not a prerequisite to progress.
+
+**Decision status:** This summary confirms the approved pipeline and engineering priorities; it does not authorize additional major architecture decisions. New major choices remain subject to the established approval protocol.
 
 **Change control:** Future strategic decisions are appended to the register with dates and reasons; corrections to factual measurements should identify the corrected evidence and date. All updates are reviewed by the user before publication.
