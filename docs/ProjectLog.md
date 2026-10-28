@@ -21,7 +21,7 @@
 
 **Pipeline and timing.** Initial stage: identify and preserve plausible vocal notes (including harmonies). Later: group notes into separate vocal lanes, align supplied lyrics to phrases/morae, and make targeted edits (e.g., splitting a note when a Japanese `ん` needs separate timing). Splitting is **context-dependent**, not a blanket rule for every `ん`. Keep MIDI export and measurable reduction of editing work as the **first ~8-week POC**, with a small VPR interoperability investigation early. Plan around **~11 hours/week**, milestone demonstrations every **6–10 calendar weeks**, and a flexible 40–60-week portfolio horizon. Winter Comiket is optional.
 
-**Current status.** Study Days 1–6 complete; Day 7 weekly assessment still pending. More paired examples are expected over the weekend, **but development continues meanwhile**. Five named engineering decisions have been approved, and this version is **approved for publication**. Day-specific notes will be kept in `Day-by-Day Log/` beginning with Day 7, not accumulated here.
+**Current status.** Study Days 1–7 complete; the Day 7 weekly assessment passed all five parts and the Week 1 summary is recorded below. More paired examples are expected over the weekend, **but development continues meanwhile**. Five named engineering decisions have been approved. Day-specific notes are maintained in `Day-by-Day Log/` beginning with Day 7, not accumulated here.
 
 ---
 
@@ -232,7 +232,7 @@ This is a **working proposal**, not a fixed feature contract. Study days and cal
 | `Day-by-Day Log/Day-07.md`, then `Day-08.md`, ... | One-page record per study day; start on Day 7, with no backfill for Days 1–6 | After each study day, pending user approval |
 | `ProjectLog.pdf` | Readable export generated from the approved Markdown master | After approval and major documentation updates |
 
-**Daily one-page template:** Date and study-day number; objective; completed challenges/commits; evidence of tests/results; technical concepts and blockers; **<u>important decisions</u>** with reasons; next steps; approval status. Short entries are preferable to filling a page artificially. A day is recorded when it actually happens; do not mark Day 7's assessment complete prematurely.
+**Daily one-page template:** Date and study-day number; objective; completed challenges/commits; evidence of tests/results; technical concepts and blockers; **<u>important decisions</u>** with reasons; next steps; approval status. Short entries are preferable to filling a page artificially. A day is recorded when it actually happens; do not mark any study day complete before its review and approval.
 
 **Weekly summary (every seven study days):** Add a concise rollup to `docs/ProjectLog.md`, referencing the daily files where relevant: work delivered, retained C++/algorithmic understanding, weak areas, tests, decisions, and changes to the next week's lesson plan. The Day 7 one-pager may also note the weekly assessment, but the main log retains the cross-week summary.
 
@@ -244,9 +244,9 @@ This is a **working proposal**, not a fixed feature contract. Study days and cal
 
 1. **Known:** `modified.mid` is the manually cleaned vocal-note reference; `Original_空に免じて.mid` is the original arrangement. This report evaluates that pair only.
 2. **Known:** Double/triple notes can represent different singing voices. **Unknown:** the correct singer/lane assignment of every retained note; we will eventually need manually tagged example passages.
-3. **Known:** More reference pairs are expected over the upcoming weekend. Implementation and the Day 7 review **continue without waiting**.
+3. **Known:** More reference pairs are expected over the upcoming weekend. Day 8 development **continues without waiting**.
 4. **To validate later:** Which Japanese lyric timing/phoneme constraints—including `ん`—actually require splitting a note versus adjusting phonemes within the existing note in VOCALOID6?
-5. **Documentation:** Begin the first one-page day entry **after Day 7 work**. Keep song-specific data out of public GitHub absent redistribution rights.
+5. **Documentation:** The first daily entry, `Day-07.md`, was approved and published after completion of Day 7. Keep song-specific data out of public GitHub absent redistribution rights.
 
 
 ## 10. Week 1 review — study Days 1–7 (28 October 2026, JST)
