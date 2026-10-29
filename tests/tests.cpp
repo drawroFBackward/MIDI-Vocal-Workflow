@@ -178,7 +178,9 @@ void testNotesUnmodified::runTest() {
             expectEquals(notes[i].channel, originalNotes[i].channel);
             expectEquals(notes[i].startTick, originalNotes[i].startTick);
             expectEquals(notes[i].duration, originalNotes[i].duration);
-            expectEquals(notes[i].isComplete, originalNotes[i].isComplete);
+            if (notes[i].isComplete != originalNotes[i].isComplete) {
+                expect(false); // isComplete should be the same
+            }
         }
     });
 }
