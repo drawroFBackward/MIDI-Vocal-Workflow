@@ -41,3 +41,38 @@ class zeroVelocityNoteOnTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+class multiplePitchTest : public juce::UnitTest{
+    public:
+        multiplePitchTest() : juce::UnitTest("Multiple Pitch Test") {}
+
+        void runTest() override;
+};
+
+class simultaneousNotesAboveMinPitchTest : public juce::UnitTest{
+    public:
+        simultaneousNotesAboveMinPitchTest() : juce::UnitTest("Simultaneous Notes Above Min Pitch Test") {}
+
+        void runTest() override;
+};
+
+class noNotesAboveMinPitchTest : public juce::UnitTest{
+    public:
+        noNotesAboveMinPitchTest() : juce::UnitTest("No Notes Above Min Pitch Test") {}
+
+        void runTest() override;
+};
+
+class emptySequenceTest : public juce::UnitTest{
+    public:
+        emptySequenceTest() : juce::UnitTest("Empty Sequence Test") {}
+
+        void runTest() override;
+};
+
+class testNotesUnmodified : public juce::UnitTest{
+    public:
+        testNotesUnmodified() : juce::UnitTest("Test Notes Unmodified") {}
+
+        void runTest() override;
+};

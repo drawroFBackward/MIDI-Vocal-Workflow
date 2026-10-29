@@ -109,3 +109,76 @@ void zeroVelocityNoteOnTest::runTest() {
         expectEquals(notes[0].duration, 480.0); // Duration should be from tick 120 to tick 600
     });
 }
+
+void multiplePitchTest::runTest() {
+    testCase("Verify if multiple pitches are handled correctly", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0),
+            Note(64, 90, 0, 1, 960.0, 480.0)
+        };
+        auto selectedIndices = selectByPitch(notes, 62);
+        expectEquals(static_cast<int>(selectedIndices.size()), 2);
+        if (selectedIndices.size() < 2) return;
+        expectEquals(selectedIndices[0], static_cast<std::size_t>(1));
+        expectEquals(selectedIndices[1], static_cast<std::size_t>(2));
+    });
+}
+
+void simultaneousNotesAboveMinPitchTest::runTest() {
+    testCase("Verify if simultaneous notes above min pitch are handled correctly", [&] {
+        std::vector<Note> notes = {
+            Note(65, 80, 0, 1, 0.0, 480.0),
+            Note(67, 85, 0, 1, 0.0, 480.0),
+            Note(69, 90, 0, 1, 0.0, 480.0)
+        };
+        auto selectedIndices = selectByPitch(notes, 66);
+        expectEquals(static_cast<int>(selectedIndices.size()), 2);
+        if (selectedIndices.size() < 2) return;
+        expectEquals(selectedIndices[0], static_cast<std::size_t>(1));
+        expectEquals(selectedIndices[1], static_cast<std::size_t>(2));
+    });
+}
+
+void noNotesAboveMinPitchTest::runTest() {
+    testCase("Verify if no notes above min pitch are handled correctly", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(61, 85, 0, 1, 480.0, 480.0),
+            Note(62, 90, 0, 1, 960.0, 480.0)
+        };
+        auto selectedIndices = selectByPitch(notes, 63);
+        expectEquals(static_cast<int>(selectedIndices.size()), 0);
+    });
+}
+
+void emptySequenceTest::runTest() {
+    testCase("Verify if empty sequence is handled correctly", [&] {
+        std::vector<Note> notes; // Empty vector
+        auto selectedIndices = selectByPitch(notes, 60);
+        expectEquals(static_cast<int>(selectedIndices.size()), 0);
+    });
+}
+
+void testNotesUnmodified::runTest() {
+    testCase("Verify if notes are unmodified after selectByPitch", [&] {
+        std::vector<Note> originalNotes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0),
+            Note(64, 90, 0, 1, 960.0, 480.0)
+        };
+        std::vector<Note> notes = originalNotes; // Copy of original notes
+        auto selectedIndices = selectByPitch(notes, 62);
+        expectEquals(static_cast<int>(notes.size()), static_cast<int>(originalNotes.size()));
+        if (notes.size() != originalNotes.size()) return;
+        for (std::size_t i = 0; i < notes.size(); ++i) {
+            expectEquals(notes[i].pitch, originalNotes[i].pitch);
+            expectEquals(notes[i].velocity, originalNotes[i].velocity);
+            expectEquals(notes[i].track, originalNotes[i].track);
+            expectEquals(notes[i].channel, originalNotes[i].channel);
+            expectEquals(notes[i].startTick, originalNotes[i].startTick);
+            expectEquals(notes[i].duration, originalNotes[i].duration);
+            expectEquals(notes[i].isComplete, originalNotes[i].isComplete);
+        }
+    });
+}

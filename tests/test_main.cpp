@@ -1,11 +1,18 @@
 #include "tests.h"
 
 int main() {
+    // extractNotes tests
     noteTest A;
     overlapTest B;
     incompleteNoteTest C;
     zeroDurationNoteTest D;
     zeroVelocityNoteOnTest E;
+    // selectByPitch tests
+    multiplePitchTest F;
+    simultaneousNotesAboveMinPitchTest G;
+    noNotesAboveMinPitchTest H;
+    emptySequenceTest I;
+    testNotesUnmodified J;
     juce::UnitTestRunner runner;
     runner.runAllTests();
     if (runner.getNumResults() == 0) {
