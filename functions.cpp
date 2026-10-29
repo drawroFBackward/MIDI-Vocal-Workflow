@@ -67,3 +67,16 @@ std::vector<Note> extractNotes(const juce::MidiFile& midiFile)
 
     return notes;
 }
+
+std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPitch)
+{
+    std::vector<std::size_t> selectedIndices;
+    for (std::size_t i = 0; i < notes.size(); ++i)
+    {
+        if (notes[i].pitch >= minPitch)
+        {
+            selectedIndices.push_back(i);
+        }
+    }
+    return selectedIndices;
+}

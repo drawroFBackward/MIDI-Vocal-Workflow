@@ -12,3 +12,5 @@ juce::File filePath(std::string path);
 juce::MidiFile readMidiFile(const std::string& path);
 
 std::vector<Note> extractNotes(const juce::MidiFile& midiFile);
+
+std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPitch);
