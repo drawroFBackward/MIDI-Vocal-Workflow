@@ -89,12 +89,13 @@ int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<
     {
         const auto& note = originalNotes[i];
 
-        for (const auto& benchmarkNote : benchmarkNotes)
+        for (int j = 0; j < benchmarkNotes.size(); ++j)
         {
-            if (!matched[&benchmarkNote - &benchmarkNotes[0]] && note.pitch == benchmarkNote.pitch && note.startTick == benchmarkNote.startTick)
+            const auto& benchmarkNote = benchmarkNotes[j];
+            if (!matched[j] && note.pitch == benchmarkNote.pitch && note.startTick == benchmarkNote.startTick)
             {
                 ++count;
-                matched[&benchmarkNote - &benchmarkNotes[0]] = true;
+                matched[j] = true;
                 break;
             }
         }
