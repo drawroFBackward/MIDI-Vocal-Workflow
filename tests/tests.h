@@ -5,6 +5,7 @@
 #include <juce_core/juce_core.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 
+// extractNotes() test functions
 std::vector<Note> testExtractNotes(const juce::MidiMessageSequence& sequence);
 
 class noteTest : public juce::UnitTest{
@@ -42,6 +43,7 @@ class zeroVelocityNoteOnTest : public juce::UnitTest{
         void runTest() override;
 };
 
+// selectByPitch() test functions
 class multiplePitchTest : public juce::UnitTest{
     public:
         multiplePitchTest() : juce::UnitTest("Multiple Pitch Test") {}
@@ -73,6 +75,14 @@ class emptySequenceTest : public juce::UnitTest{
 class testNotesUnmodified : public juce::UnitTest{
     public:
         testNotesUnmodified() : juce::UnitTest("Test Notes Unmodified") {}
+
+        void runTest() override;
+};
+
+// truePositiveNotes() test functions
+class duplicateNotesTest : public juce::UnitTest{
+    public:
+        duplicateNotesTest() : juce::UnitTest("Duplicate Notes Test") {}
 
         void runTest() override;
 };

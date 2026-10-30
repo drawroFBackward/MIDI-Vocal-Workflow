@@ -184,3 +184,20 @@ void testNotesUnmodified::runTest() {
         }
     });
 }
+
+void duplicateNotesTest::runTest() {
+    testCase("Verify if duplicate notes are handled correctly", [&] {
+        std::vector<Note> originalNotes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0)
+        };
+        std::vector<Note> benchmarkNotes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0)
+        };
+        std::vector<std::size_t> indices = {0, 1, 2};
+        int tp = truePositiveNotes(originalNotes, benchmarkNotes, indices);
+        expectEquals(tp, 2);
+    });
+}

@@ -1,6 +1,7 @@
 #include "tests.h"
 
 int main() {
+    // Tests
     // extractNotes tests
     noteTest A;
     overlapTest B;
@@ -13,6 +14,10 @@ int main() {
     noNotesAboveMinPitchTest H;
     emptySequenceTest I;
     testNotesUnmodified J;
+    // truePositiveNotes tests
+    duplicateNotesTest K;
+
+    // run all tests
     juce::UnitTestRunner runner;
     runner.runAllTests();
     if (runner.getNumResults() == 0) {
