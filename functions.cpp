@@ -80,3 +80,44 @@ std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPi
     }
     return selectedIndices;
 }
+
+int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices)
+{
+    int count = 0;
+    for (auto i : indices)
+    {
+        const auto& note = originalNotes[i];
+        for (const auto& benchmarkNote : benchmarkNotes)
+        {
+            if (note.pitch == benchmarkNote.pitch && note.track == benchmarkNote.track && note.channel == benchmarkNote.channel && note.duration == benchmarkNote.duration && note.startTick == benchmarkNote.startTick)
+            {
+                ++count;
+                break;
+            }
+        }
+    }
+    return count;
+}
+
+int falseNegatives(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices)
+{
+    int count = 0;
+    for (auto i : indices)
+    {
+        const auto& note = originalNotes[i];
+        bool found = false;
+        for (const auto& benchmarkNote : benchmarkNotes)
+        {
+            if (note.pitch == benchmarkNote.pitch && note.track == benchmarkNote.track && note.channel == benchmarkNote.channel && note.duration == benchmarkNote.duration && note.startTick == benchmarkNote.startTick)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            ++count;
+        }
+    }
+    return count;
+}
