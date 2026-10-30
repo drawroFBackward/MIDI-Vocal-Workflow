@@ -32,7 +32,7 @@ int main()
 
     int tp = truePositiveNotes(notes, correctNotes, selectedIndices);
     int fp = static_cast<int>(selectedIndices.size()) - tp;
-    int fn = falseNegatives(notes, correctNotes, selectedIndices);
+    int fn = static_cast<int>(correctNotes.size()) - tp;
 
     std::cout << "True Positives: " << tp << "\n";
     std::cout << "False Positives: " << fp << "\n";
