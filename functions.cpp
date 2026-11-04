@@ -102,3 +102,22 @@ int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<
     }
     return count;
 }
+
+juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, int ppq)
+{
+    juce::MidiFile midiFile;
+    midiFile.setTicksPerQuarterNote(ppq);
+
+    juce::MidiMessageSequence sequence;
+    for (const auto& note : notes)
+    {
+        sequence.addEvent(juce::MidiMessage::noteOn(note.channel, note.pitch, static_cast<juce::uint8>(note.velocity)), note.startTick);
+        sequence.addEvent(juce::MidiMessage::noteOff(note.channel, note.pitch), note.startTick + static_cast<juce::int64>(note.duration));
+    }
+
+    sequence.sort();
+
+    midiFile.addTrack(sequence);
+
+    return midiFile;
+}
