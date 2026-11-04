@@ -116,8 +116,8 @@ juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, int ppq)
         if (!note.isComplete){
             throw std::runtime_error("Incomplete note encountered");
         }
-        if ((note.startTick != floor(note.startTick)) || (note.duration != floor(note.duration)))
-            throw std::runtime_error("Note startTick and duration must be whole numbers");
+        if ((note.startTick != floor(note.startTick)) || (note.duration != floor(note.duration)) || (note.startTick < 0) || (note.duration < 0) || !isfinite(note.startTick) || !isfinite(note.duration))
+            throw std::runtime_error("Note startTick and duration must be whole numbers and non-negative");
         sequence.addEvent(juce::MidiMessage::noteOn(note.channel, note.pitch, static_cast<juce::uint8>(note.velocity)), note.startTick);
         sequence.addEvent(juce::MidiMessage::noteOff(note.channel, note.pitch), note.startTick + note.duration);
     }

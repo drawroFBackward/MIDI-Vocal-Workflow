@@ -20,6 +20,8 @@ int main() {
     validNoteGenerationTest L;
     incompleteNoteRejectionTest M;
     invalidPPQTest N;
+    rejectFractionsTest O;
+    rejectNegativeValuesTest P;
 
     // run all tests
     juce::UnitTestRunner runner;

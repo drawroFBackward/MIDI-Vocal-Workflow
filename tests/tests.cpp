@@ -281,3 +281,21 @@ void rejectFractionsTest::runTest() {
         expect(exceptionThrown);
     });
 }
+
+void rejectNegativeValuesTest::runTest() {
+    testCase("Verify if notes with negative startTick or duration are rejected", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, -480.0, 480.0)
+        };
+        notes[0].isComplete = true;
+        notes[1].isComplete = true;
+        bool exceptionThrown = false;
+        try {
+            juce::MidiFile midiFile = notesToMidiFile(notes, 480);
+        } catch (const std::runtime_error&) {
+            exceptionThrown = true;
+        }
+        expect(exceptionThrown);
+    });
+}

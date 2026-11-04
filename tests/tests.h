@@ -115,3 +115,10 @@ class rejectFractionsTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+class rejectNegativeValuesTest : public juce::UnitTest{
+    public:
+        rejectNegativeValuesTest() : juce::UnitTest("Reject Negative Values Test") {}
+
+        void runTest() override;
+};
