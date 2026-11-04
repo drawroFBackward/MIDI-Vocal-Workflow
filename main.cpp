@@ -5,18 +5,42 @@
 #include <vector>
 #include <algorithm>
 
-int main()
+int wmain(int argc, wchar_t* argv[])
 {
     // Step 1: Specify the path to your MIDI file
-    std::string midiFilePath = "test-data\\test.mid";
+    //std::string originalMidiFilePath = "..\\MIDI-Vocal-Workflow-Test-Data\\Original_空に免じて.mid";
+    //std::string benchmarkMidiFileName = "..\\MIDI-Vocal-Workflow-Test-Data\\Modified_空に免じて.mid";
+
+    // Step 1: Exit on no input files
+    
+    if (argc == 1)
+    {
+        std::cout << "Please check input arguments. Usage: <program> <original_midi_file> <benchmark_midi_file>\n";
+        return 0;
+    }
+    if (argc != 3)
+    {
+        std::cout << "Incorrect number of arguments. Usage: <program> <original_midi_file> <benchmark_midi_file>\n";
+        return 1;
+    }
+    
+    
 
     // Step 2: Read the MIDI file, extract notes, and handle exceptions
-    juce::MidiFile midiFile;
-    std::vector<Note> notes;
+    juce::MidiFile originalMidiFile, benchmarkMidiFile;
+    std::vector<Note> notes, correctNotes;
+    std::string originalMidiFileName = juce::String(argv[1]).toStdString();
+    std::string benchmarkMidiFileName = juce::String(argv[2]).toStdString();
+
+    std::cout << "Original MIDI File: " << originalMidiFileName << "\n";
+    std::cout << "Benchmark MIDI File: " << benchmarkMidiFileName << "\n";
+
     try
     {
-        midiFile = readMidiFile(midiFilePath);
-        notes = extractNotes(midiFile);
+        originalMidiFile = readMidiFile(originalMidiFileName);
+        benchmarkMidiFile = readMidiFile(benchmarkMidiFileName);
+        notes = extractNotes(originalMidiFile);
+        correctNotes = extractNotes(benchmarkMidiFile);
     }
     catch (const std::exception& e)
     {
@@ -24,32 +48,24 @@ int main()
         return 1;
     }
 
-    // Reading report
+    // Step 3: Run selection function and compare results
+    auto selectedIndices = selectByPitch(notes, 60);
 
-    std::cout << "\nTotal notes read: " << notes.size() << "\n";
-    int incompleteNotes = std::count_if(notes.begin(), notes.end(), [](const Note& n) { return !n.isComplete; });
-    std::cout << "Complete notes: " << (notes.size() - incompleteNotes) << "\n";
-    std::cout << "Incomplete notes: " << incompleteNotes << "\n";
+    int tp = truePositiveNotes(notes, correctNotes, selectedIndices);
+    int fp = static_cast<int>(selectedIndices.size()) - tp;
+    int fn = static_cast<int>(correctNotes.size()) - tp;
 
-    // Raise a warning if there are incomplete notes
-    if (incompleteNotes)
-    {
-        std::cerr << "Warning: There are incomplete notes in the MIDI file.\n";
-    }
+    std::cout << "True Positives: " << tp << "\n";
+    std::cout << "False Positives: " << fp << "\n";
+    std::cout << "False Negatives: " << fn << "\n";
 
-    std::cout << "\nOur melody:\n";
+    double precision = tp + fp > 0 ? static_cast<double>(tp) / (tp + fp) : 0.0;
+    double recall = tp + fn > 0 ? static_cast<double>(tp) / (tp + fn) : 0.0;
+    double f1 = precision + recall > 0 ? 2 * (precision * recall) / (precision + recall) : 0.0;
 
-    for (const Note& note : notes)
-    {
-        std::cout << "Pitch: " << note.pitch
-                << " | Velocity: " << note.velocity
-                << " | Start: " << note.startTick
-                << " | Duration: " << note.duration
-                << " | Track: " << note.track
-                << " | Channel: " << note.channel
-                << " | Complete: " << (note.isComplete ? "Yes" : "No")
-                << "\n";
-    }
+    std::cout << "Precision: " << precision << "\n";
+    std::cout << "Recall: " << recall << "\n";
+    std::cout << "F1 Score: " << f1 << "\n";
 
 
     return 0;

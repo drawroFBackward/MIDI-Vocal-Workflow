@@ -67,3 +67,38 @@ std::vector<Note> extractNotes(const juce::MidiFile& midiFile)
 
     return notes;
 }
+
+std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPitch)
+{
+    std::vector<std::size_t> selectedIndices;
+    for (std::size_t i = 0; i < notes.size(); ++i)
+    {
+        if (notes[i].pitch >= minPitch)
+        {
+            selectedIndices.push_back(i);
+        }
+    }
+    return selectedIndices;
+}
+
+int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices)
+{
+    int count = 0;
+    std::vector<bool> matched(benchmarkNotes.size(), false);
+    for (auto i : indices)
+    {
+        const auto& note = originalNotes[i];
+
+        for (int j = 0; j < benchmarkNotes.size(); ++j)
+        {
+            const auto& benchmarkNote = benchmarkNotes[j];
+            if (!matched[j] && note.pitch == benchmarkNote.pitch && note.startTick == benchmarkNote.startTick)
+            {
+                ++count;
+                matched[j] = true;
+                break;
+            }
+        }
+    }
+    return count;
+}
