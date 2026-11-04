@@ -88,3 +88,23 @@ class duplicateNotesTest : public juce::UnitTest{
 };
 
 // notesToMidiFile() test functions
+class validNoteGenerationTest : public juce::UnitTest{
+    public:
+        validNoteGenerationTest() : juce::UnitTest("Valid Note Generation Test") {}
+
+        void runTest() override;
+};
+
+class incompleteNoteRejectionTest : public juce::UnitTest{
+    public:
+        incompleteNoteRejectionTest() : juce::UnitTest("Incomplete Note Rejection Test") {}
+
+        void runTest() override;
+};
+
+class invalidPPQTest : public juce::UnitTest{
+    public:
+        invalidPPQTest() : juce::UnitTest("Invalid PPQ Test") {}
+
+        void runTest() override;
+};

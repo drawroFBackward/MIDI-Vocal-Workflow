@@ -117,7 +117,7 @@ juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, int ppq)
             throw std::runtime_error("Incomplete note encountered");
         }
         sequence.addEvent(juce::MidiMessage::noteOn(note.channel, note.pitch, static_cast<juce::uint8>(note.velocity)), note.startTick);
-        sequence.addEvent(juce::MidiMessage::noteOff(note.channel, note.pitch), note.startTick + note.duration);
+        sequence.addEvent(juce::MidiMessage::noteOff(note.channel, note.pitch), std::floor(note.startTick + note.duration));
     }
 
     sequence.sort();

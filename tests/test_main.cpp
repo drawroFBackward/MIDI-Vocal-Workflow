@@ -16,6 +16,10 @@ int main() {
     testNotesUnmodified J;
     // truePositiveNotes tests
     duplicateNotesTest K;
+    // notesToMidiFile tests
+    validNoteGenerationTest L;
+    incompleteNoteRejectionTest M;
+    invalidPPQTest N;
 
     // run all tests
     juce::UnitTestRunner runner;

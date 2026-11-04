@@ -201,3 +201,61 @@ void duplicateNotesTest::runTest() {
         expectEquals(tp, 2);
     });
 }
+
+void validNoteGenerationTest::runTest() {
+    testCase("Verify if valid notes are correctly converted to MIDI", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0)
+        };
+        juce::MidiFile midiFile = notesToMidiFile(notes, 480);
+        expectEquals(midiFile.getNumTracks(), 1);
+        expectEquals(midiFile.getTrack(0)->getNumEvents(), 4); // 2 noteOn + 2 noteOff
+        expect(midiFile.getTrack(0)->getEventPointer(0)->message.isNoteOn());
+        expect(midiFile.getTrack(0)->getEventPointer(1)->message.isNoteOff());
+        expect(midiFile.getTrack(0)->getEventPointer(2)->message.isNoteOn());
+        expect(midiFile.getTrack(0)->getEventPointer(3)->message.isNoteOff());
+        expectEquals(midiFile.getTrack(0)->getEventPointer(0)->message.getNoteNumber(), 60);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(1)->message.getNoteNumber(), 60);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(2)->message.getNoteNumber(), 62);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(3)->message.getNoteNumber(), 62);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(0)->message.getVelocity(), static_cast<juce::uint8>(80));
+        expectEquals(midiFile.getTrack(0)->getEventPointer(2)->message.getVelocity(), static_cast<juce::uint8>(85));
+        expectEquals(midiFile.getTrack(0)->getEventPointer(0)->message.getTimeStamp(), 0.0);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(1)->message.getTimeStamp(), 480.0);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(2)->message.getTimeStamp(), 480.0);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(3)->message.getTimeStamp(), 960.0);
+    });
+}
+
+void incompleteNoteRejectionTest::runTest() {
+    testCase("Verify if incomplete notes are rejected", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0)
+        };
+        notes[1].isComplete = false;
+        bool exceptionThrown = false;
+        try {
+            juce::MidiFile midiFile = notesToMidiFile(notes, 480);
+        } catch (const std::runtime_error&) {
+            exceptionThrown = true;
+        }
+        expect(exceptionThrown);
+    });
+}
+
+void invalidPPQTest::runTest() {
+    testCase("Verify if invalid PPQ is rejected", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0)
+        };
+        bool exceptionThrown = false;
+        try {
+            juce::MidiFile midiFile = notesToMidiFile(notes, 0);
+        } catch (const std::invalid_argument&) {
+            exceptionThrown = true;
+        }
+        expect(exceptionThrown);
+    });
+}
