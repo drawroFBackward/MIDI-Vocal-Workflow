@@ -5,18 +5,39 @@
 #include <vector>
 #include <algorithm>
 
-int main()
+int wmain(int argc, wchar_t* argv[])
 {
     // Step 1: Specify the path to your MIDI file
-    std::string originalMidiFilePath = "..\\MIDI-Vocal-Workflow-Test-Data\\Original_空に免じて.mid";
-    std::string benchmarkMidiFileName = "..\\MIDI-Vocal-Workflow-Test-Data\\modified.mid";
+    //std::string originalMidiFilePath = "..\\MIDI-Vocal-Workflow-Test-Data\\Original_空に免じて.mid";
+    //std::string benchmarkMidiFileName = "..\\MIDI-Vocal-Workflow-Test-Data\\Modified_空に免じて.mid";
+
+    // Step 1: Exit on no input files
+    
+    if (argc == 1)
+    {
+        std::cout << "Please check input arguments. Usage: <program> <original_midi_file> <benchmark_midi_file>\n";
+        return 0;
+    }
+    if (argc != 3)
+    {
+        std::cout << "Incorrect number of arguments. Usage: <program> <original_midi_file> <benchmark_midi_file>\n";
+        return 1;
+    }
+    
+    
 
     // Step 2: Read the MIDI file, extract notes, and handle exceptions
     juce::MidiFile originalMidiFile, benchmarkMidiFile;
     std::vector<Note> notes, correctNotes;
+    std::string originalMidiFileName = juce::String(argv[1]).toStdString();
+    std::string benchmarkMidiFileName = juce::String(argv[2]).toStdString();
+
+    std::cout << "Original MIDI File: " << originalMidiFileName << "\n";
+    std::cout << "Benchmark MIDI File: " << benchmarkMidiFileName << "\n";
+
     try
     {
-        originalMidiFile = readMidiFile(originalMidiFilePath);
+        originalMidiFile = readMidiFile(originalMidiFileName);
         benchmarkMidiFile = readMidiFile(benchmarkMidiFileName);
         notes = extractNotes(originalMidiFile);
         correctNotes = extractNotes(benchmarkMidiFile);
