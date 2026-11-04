@@ -105,14 +105,19 @@ int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<
 
 juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, int ppq)
 {
+    if (ppq <= 0)
+        throw std::invalid_argument("PPQ must be positive");
     juce::MidiFile midiFile;
     midiFile.setTicksPerQuarterNote(ppq);
 
     juce::MidiMessageSequence sequence;
     for (const auto& note : notes)
     {
+        if (!note.isComplete){
+            throw std::runtime_error("Incomplete note encountered");
+        }
         sequence.addEvent(juce::MidiMessage::noteOn(note.channel, note.pitch, static_cast<juce::uint8>(note.velocity)), note.startTick);
-        sequence.addEvent(juce::MidiMessage::noteOff(note.channel, note.pitch), note.startTick + static_cast<juce::int64>(note.duration));
+        sequence.addEvent(juce::MidiMessage::noteOff(note.channel, note.pitch), note.startTick + note.duration);
     }
 
     sequence.sort();

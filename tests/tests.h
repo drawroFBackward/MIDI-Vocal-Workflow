@@ -86,3 +86,5 @@ class duplicateNotesTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+// notesToMidiFile() test functions
