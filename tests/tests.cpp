@@ -208,6 +208,8 @@ void validNoteGenerationTest::runTest() {
             Note(60, 80, 0, 1, 0.0, 480.0),
             Note(62, 85, 0, 1, 480.0, 480.0)
         };
+        notes[0].isComplete = true;
+        notes[1].isComplete = true;
         juce::MidiFile midiFile = notesToMidiFile(notes, 480);
         expectEquals(midiFile.getNumTracks(), 1);
         expectEquals(midiFile.getTrack(0)->getNumEvents(), 4); // 2 noteOn + 2 noteOff
@@ -234,7 +236,8 @@ void incompleteNoteRejectionTest::runTest() {
             Note(60, 80, 0, 1, 0.0, 480.0),
             Note(62, 85, 0, 1, 480.0, 480.0)
         };
-        notes[1].isComplete = false;
+        notes[0].isComplete = true;
+        // notes[1].isComplete = false;
         bool exceptionThrown = false;
         try {
             juce::MidiFile midiFile = notesToMidiFile(notes, 480);
@@ -250,10 +253,29 @@ void invalidPPQTest::runTest() {
         std::vector<Note> notes = {
             Note(60, 80, 0, 1, 0.0, 480.0)
         };
+        notes[0].isComplete = true;
         bool exceptionThrown = false;
         try {
             juce::MidiFile midiFile = notesToMidiFile(notes, 0);
         } catch (const std::invalid_argument&) {
+            exceptionThrown = true;
+        }
+        expect(exceptionThrown);
+    });
+}
+
+void rejectFractionsTest::runTest() {
+    testCase("Verify if notes with fractional startTick or duration are rejected", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.5, 480.0)
+        };
+        notes[0].isComplete = true;
+        notes[1].isComplete = true;
+        bool exceptionThrown = false;
+        try {
+            juce::MidiFile midiFile = notesToMidiFile(notes, 480);
+        } catch (const std::runtime_error&) {
             exceptionThrown = true;
         }
         expect(exceptionThrown);

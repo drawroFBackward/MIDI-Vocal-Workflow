@@ -108,3 +108,10 @@ class invalidPPQTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+class rejectFractionsTest : public juce::UnitTest{
+    public:
+        rejectFractionsTest() : juce::UnitTest("Reject Fractions Test") {}
+
+        void runTest() override;
+};
