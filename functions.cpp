@@ -145,5 +145,8 @@ void exportMidiFile(const juce::MidiFile& midiFile, const std::string& path)
     juce::FileOutputStream outputStream(file);
     if (!outputStream.openedOk())
         throw std::runtime_error("Failed to open output file");
-    midiFile.writeTo(outputStream);
+    outputStream.setPosition(0);
+    outputStream.truncate();
+    if (!midiFile.writeTo(outputStream))
+        throw std::runtime_error("Failed to write MIDI file");
 }

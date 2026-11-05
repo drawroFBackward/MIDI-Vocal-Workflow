@@ -316,7 +316,8 @@ void outputMatchedInputTest::runTest() {
             exportMidiFile(outputMidiFile, "output.mid");
             juce::File inputFile("output.mid");
             juce::FileInputStream inputStream(inputFile);
-            createdMidiFile.readFrom(inputStream);
+            if(!createdMidiFile.readFrom(inputStream))
+                expect(false);
         } catch (const std::exception&) {
             expect(false);
         }
