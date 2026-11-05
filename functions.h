@@ -20,6 +20,6 @@ std::vector<Note> indicesToNotes(const std::vector<Note>& notes, const std::vect
 
 int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices);
 
-juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, int ppq);
+juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, const juce::MidiFile& reference);
 
 void exportMidiFile(const juce::MidiFile& midiFile, const std::string& path);

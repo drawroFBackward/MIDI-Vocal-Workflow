@@ -70,11 +70,11 @@ int wmain(int argc, wchar_t* argv[])
     // Step 4: Export the selected notes to a new MIDI file
     auto selectedNotes = indicesToNotes(notes, selectedIndices);
     std::string outputMidiFileName = "Vocal_";
-    //outputMidiFileName += originalMidiFileName;
+    // outputMidiFileName += originalMidiFileName;
     outputMidiFileName += ".mid";
     try
     {
-        juce::MidiFile outputMidiFile = notesToMidiFile(selectedNotes, static_cast<int>(originalMidiFile.getTimeFormat()));
+        juce::MidiFile outputMidiFile = notesToMidiFile(selectedNotes, originalMidiFile);
         exportMidiFile(outputMidiFile, outputMidiFileName);
     }
     catch(const std::exception& e)

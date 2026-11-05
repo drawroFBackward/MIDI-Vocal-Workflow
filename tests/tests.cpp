@@ -210,7 +210,9 @@ void validNoteGenerationTest::runTest() {
         };
         notes[0].isComplete = true;
         notes[1].isComplete = true;
-        juce::MidiFile midiFile = notesToMidiFile(notes, 480);
+        juce::MidiFile reference;
+        reference.setTicksPerQuarterNote(480);
+        juce::MidiFile midiFile = notesToMidiFile(notes, reference);
         expectEquals(midiFile.getNumTracks(), 1);
         expectEquals(midiFile.getTrack(0)->getNumEvents(), 4); // 2 noteOn + 2 noteOff
         expect(midiFile.getTrack(0)->getEventPointer(0)->message.isNoteOn());
@@ -240,7 +242,9 @@ void incompleteNoteRejectionTest::runTest() {
         // notes[1].isComplete = false;
         bool exceptionThrown = false;
         try {
-            juce::MidiFile midiFile = notesToMidiFile(notes, 480);
+            juce::MidiFile reference;
+            reference.setTicksPerQuarterNote(480);
+            juce::MidiFile midiFile = notesToMidiFile(notes, reference);
         } catch (const std::runtime_error&) {
             exceptionThrown = true;
         }
@@ -256,7 +260,9 @@ void invalidPPQTest::runTest() {
         notes[0].isComplete = true;
         bool exceptionThrown = false;
         try {
-            juce::MidiFile midiFile = notesToMidiFile(notes, 0);
+            juce::MidiFile reference;
+            reference.setTicksPerQuarterNote(0);
+            juce::MidiFile midiFile = notesToMidiFile(notes, reference);
         } catch (const std::invalid_argument&) {
             exceptionThrown = true;
         }
@@ -274,7 +280,9 @@ void rejectFractionsTest::runTest() {
         notes[1].isComplete = true;
         bool exceptionThrown = false;
         try {
-            juce::MidiFile midiFile = notesToMidiFile(notes, 480);
+            juce::MidiFile reference;
+            reference.setTicksPerQuarterNote(480);
+            juce::MidiFile midiFile = notesToMidiFile(notes, reference);
         } catch (const std::runtime_error&) {
             exceptionThrown = true;
         }
@@ -292,7 +300,9 @@ void rejectNegativeValuesTest::runTest() {
         notes[1].isComplete = true;
         bool exceptionThrown = false;
         try {
-            juce::MidiFile midiFile = notesToMidiFile(notes, 480);
+            juce::MidiFile reference;
+            reference.setTicksPerQuarterNote(480);
+            juce::MidiFile midiFile = notesToMidiFile(notes, reference);
         } catch (const std::runtime_error&) {
             exceptionThrown = true;
         }
@@ -312,7 +322,9 @@ void outputMatchedInputTest::runTest() {
         oldNotes[1].isComplete = true;
         oldNotes[2].isComplete = true;
         oldNotes[3].isComplete = true;
-        juce::MidiFile oldMidiFile = notesToMidiFile(oldNotes, 480);
+        juce::MidiFile reference;
+        reference.setTicksPerQuarterNote(480);
+        juce::MidiFile oldMidiFile = notesToMidiFile(oldNotes, reference);
         std::vector<Note> notes = {
             Note(60, 80, 0, 1, 0.0, 480.0),
             Note(60, 80, 0, 2, 0.0, 240.0),
@@ -321,7 +333,7 @@ void outputMatchedInputTest::runTest() {
         notes[0].isComplete = true;
         notes[1].isComplete = true;
         notes[2].isComplete = true;
-        juce::MidiFile outputMidiFile = notesToMidiFile(notes, 480);
+        juce::MidiFile outputMidiFile = notesToMidiFile(notes, reference);
         juce::MidiFile createdMidiFile;
         try {
             exportMidiFile(oldMidiFile, "output.mid");

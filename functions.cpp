@@ -113,14 +113,17 @@ int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<
     return count;
 }
 
-juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, int ppq)
+juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, const juce::MidiFile& reference)
 {
+    int ppq = reference.getTimeFormat();
     if (ppq <= 0)
         throw std::invalid_argument("PPQ must be positive");
     juce::MidiFile midiFile;
     midiFile.setTicksPerQuarterNote(ppq);
-
     juce::MidiMessageSequence sequence;
+    reference.findAllKeySigEvents(sequence);
+    reference.findAllTempoEvents(sequence);
+    reference.findAllTimeSigEvents(sequence);
     for (const auto& note : notes)
     {
         if (!note.isComplete){
