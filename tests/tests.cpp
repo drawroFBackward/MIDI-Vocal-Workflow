@@ -303,9 +303,15 @@ void rejectNegativeValuesTest::runTest() {
 void outputMatchedInputTest::runTest() {
     testCase("Verify if exported MIDI matches input notes", [&] {
         std::vector<Note> oldNotes = {
-            Note(40, 80, 0, 1, 0.0, 480.0)
+            Note(40, 80, 0, 1, 0.0, 480.0),
+            Note(41, 80, 0, 1, 480.0, 480.0),
+            Note(42, 80, 0, 1, 960.0, 480.0),
+            Note(43, 80, 0, 1, 1440.0, 480.0)
         };
         oldNotes[0].isComplete = true;
+        oldNotes[1].isComplete = true;
+        oldNotes[2].isComplete = true;
+        oldNotes[3].isComplete = true;
         juce::MidiFile oldMidiFile = notesToMidiFile(oldNotes, 480);
         std::vector<Note> notes = {
             Note(60, 80, 0, 1, 0.0, 480.0),
