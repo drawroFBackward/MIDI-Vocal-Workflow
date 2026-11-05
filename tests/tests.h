@@ -123,6 +123,13 @@ class rejectNegativeValuesTest : public juce::UnitTest{
         void runTest() override;
 };
 
+class metadataPreservationTest : public juce::UnitTest{
+    public:
+        metadataPreservationTest() : juce::UnitTest("Metadata Preservation Test") {}
+
+        void runTest() override;
+};
+
 // exportMidiFile() test functions
 class outputMatchedInputTest : public juce::UnitTest{
     public:

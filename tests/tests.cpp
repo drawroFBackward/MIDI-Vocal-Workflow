@@ -310,6 +310,43 @@ void rejectNegativeValuesTest::runTest() {
     });
 }
 
+void metadataPreservationTest::runTest() {
+    testCase("Verify if metadata is preserved in the exported MIDI file", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0)
+        };
+        notes[0].isComplete = true;
+        juce::MidiFile reference;
+        reference.setTicksPerQuarterNote(480);
+        juce::MidiMessageSequence _, sequence;
+        juce::MidiMessage keySig = juce::MidiMessage::keySignatureMetaEvent(0, 0);
+        juce::MidiMessage timeSig = juce::MidiMessage::timeSignatureMetaEvent(4, 4);
+        juce::MidiMessage tempo = juce::MidiMessage::tempoMetaEvent(500000); // 120 BPM
+        sequence.addEvent(keySig);
+        sequence.addEvent(timeSig);
+        sequence.addEvent(tempo);
+        reference.addTrack(_);
+        reference.addTrack(sequence);
+        juce::MidiFile midiFile = notesToMidiFile(notes, reference);
+        juce::File outputFile("output_metadata.mid");
+        exportMidiFile(midiFile, "output_metadata.mid");
+        juce::FileInputStream inputStream(outputFile);
+        juce::MidiFile readMidi;
+        expect(readMidi.readFrom(inputStream));
+        juce::MidiMessageSequence readSequence;
+        readMidi.findAllKeySigEvents(readSequence);
+        readMidi.findAllTimeSigEvents(readSequence);
+        readMidi.findAllTempoEvents(readSequence);
+        expect(readSequence.getNumEvents() == 3);
+        expectEquals(readSequence.getEventPointer(0)->message.getRawData()[0], keySig.getRawData()[0]);
+        expectEquals(readSequence.getEventPointer(0)->message.getTimeStamp(), keySig.getTimeStamp());
+        expectEquals(readSequence.getEventPointer(1)->message.getRawData()[0], timeSig.getRawData()[0]);
+        expectEquals(readSequence.getEventPointer(1)->message.getTimeStamp(), timeSig.getTimeStamp());
+        expectEquals(readSequence.getEventPointer(2)->message.getRawData()[0], tempo.getRawData()[0]);
+        expectEquals(readSequence.getEventPointer(2)->message.getTimeStamp(), tempo.getTimeStamp());
+    });
+}
+
 void outputMatchedInputTest::runTest() {
     testCase("Verify if exported MIDI matches input notes", [&] {
         std::vector<Note> oldNotes = {
