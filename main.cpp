@@ -83,5 +83,19 @@ int wmain(int argc, wchar_t* argv[])
         return 1;
     }
 
+    // reimport test
+
+    try
+    {
+        juce::MidiFile reimportedMidiFile = readMidiFile(outputMidiFileName);
+        auto reimportedNotes = extractNotes(reimportedMidiFile);
+        std::cout << "Reimported Notes Count: " << reimportedNotes.size() << "\n";
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << e.what() << "\n";
+        return 1;
+    }
+
     return 0;
 }
