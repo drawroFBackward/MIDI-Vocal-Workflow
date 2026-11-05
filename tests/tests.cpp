@@ -305,6 +305,7 @@ void outputMatchedInputTest::runTest() {
         std::vector<Note> oldNotes = {
             Note(40, 80, 0, 1, 0.0, 480.0)
         };
+        oldNotes[0].isComplete = true;
         juce::MidiFile oldMidiFile = notesToMidiFile(oldNotes, 480);
         std::vector<Note> notes = {
             Note(60, 80, 0, 1, 0.0, 480.0),
