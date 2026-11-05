@@ -302,6 +302,10 @@ void rejectNegativeValuesTest::runTest() {
 
 void outputMatchedInputTest::runTest() {
     testCase("Verify if exported MIDI matches input notes", [&] {
+        std::vector<Note> oldNotes = {
+            Note(40, 80, 0, 1, 0.0, 480.0)
+        };
+        juce::MidiFile oldMidiFile = notesToMidiFile(oldNotes, 480);
         std::vector<Note> notes = {
             Note(60, 80, 0, 1, 0.0, 480.0),
             Note(60, 80, 0, 2, 0.0, 240.0),
@@ -313,7 +317,8 @@ void outputMatchedInputTest::runTest() {
         juce::MidiFile outputMidiFile = notesToMidiFile(notes, 480);
         juce::MidiFile createdMidiFile;
         try {
-            exportMidiFile(outputMidiFile, "output.mid");
+            exportMidiFile(oldMidiFile, "output.mid");
+            exportMidiFile(outputMidiFile, "output.mid"); //Overwrite the previous file
             juce::File inputFile("output.mid");
             juce::FileInputStream inputStream(inputFile);
             if(!createdMidiFile.readFrom(inputStream))
