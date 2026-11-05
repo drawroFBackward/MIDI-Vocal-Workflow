@@ -299,3 +299,40 @@ void rejectNegativeValuesTest::runTest() {
         expect(exceptionThrown);
     });
 }
+
+void outputMatchedInputTest::runTest() {
+    testCase("Verify if exported MIDI matches input notes", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(60, 80, 0, 2, 0.0, 240.0),
+            Note(62, 85, 0, 1, 480.0, 480.0)
+        };
+        notes[0].isComplete = true;
+        notes[1].isComplete = true;
+        notes[2].isComplete = true;
+        juce::MidiFile outputMidiFile = notesToMidiFile(notes, 480);
+        juce::MidiFile createdMidiFile;
+        try {
+            exportMidiFile(outputMidiFile, "output.mid");
+            juce::File inputFile("output.mid");
+            juce::FileInputStream inputStream(inputFile);
+            createdMidiFile.readFrom(inputStream);
+        } catch (const std::exception&) {
+            expect(false);
+        }
+        expectEquals(static_cast<int>(createdMidiFile.getTimeFormat()), 480);
+        auto notesInMidiFile = extractNotes(createdMidiFile);
+        if(notesInMidiFile.size() != notes.size()) {
+            expect(false);
+            return;
+        }
+        for (size_t i = 0; i < notes.size(); ++i) {
+            expect(notesInMidiFile[i].pitch == notes[i].pitch);
+            expect(notesInMidiFile[i].velocity == notes[i].velocity);
+            expect(notesInMidiFile[i].track == notes[i].track);
+            expect(notesInMidiFile[i].channel == notes[i].channel);
+            expect(notesInMidiFile[i].startTick == notes[i].startTick);
+            expect(notesInMidiFile[i].duration == notes[i].duration);
+        }
+    });
+}

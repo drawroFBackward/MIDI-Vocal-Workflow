@@ -22,6 +22,8 @@ int main() {
     invalidPPQTest N;
     rejectFractionsTest O;
     rejectNegativeValuesTest P;
+    // exportMidiFile tests
+    outputMatchedInputTest Q;
 
     // run all tests
     juce::UnitTestRunner runner;

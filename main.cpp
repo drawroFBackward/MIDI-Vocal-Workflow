@@ -67,6 +67,18 @@ int wmain(int argc, wchar_t* argv[])
     std::cout << "Recall: " << recall << "\n";
     std::cout << "F1 Score: " << f1 << "\n";
 
+    // Step 4: Export the selected notes to a new MIDI file
+    auto selectedNotes = indicesToNotes(notes, selectedIndices);
+    try
+    {
+        juce::MidiFile outputMidiFile = notesToMidiFile(selectedNotes, static_cast<int>(originalMidiFile.getTimeFormat()));
+        exportMidiFile(outputMidiFile, "output.mid");
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        return 1;
+    }
 
     return 0;
 }

@@ -122,3 +122,11 @@ class rejectNegativeValuesTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+// exportMidiFile() test functions
+class outputMatchedInputTest : public juce::UnitTest{
+    public:
+        outputMatchedInputTest() : juce::UnitTest("Output Matched Input Test") {}
+
+        void runTest() override;
+};

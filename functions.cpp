@@ -81,6 +81,16 @@ std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPi
     return selectedIndices;
 }
 
+std::vector<Note> indicesToNotes(const std::vector<Note>& notes, const std::vector<std::size_t>& indices)
+{
+    std::vector<Note> selectedNotes;
+    for (auto i : indices)
+    {
+        selectedNotes.push_back(notes[i]);
+    }
+    return selectedNotes;
+}
+
 int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices)
 {
     int count = 0;
@@ -116,7 +126,7 @@ juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, int ppq)
         if (!note.isComplete){
             throw std::runtime_error("Incomplete note encountered");
         }
-        if ((note.startTick != floor(note.startTick)) || (note.duration != floor(note.duration)) || (note.startTick < 0) || (note.duration < 0) || !isfinite(note.startTick) || !isfinite(note.duration))
+        if ((note.startTick != std::floor(note.startTick)) || (note.duration != std::floor(note.duration)) || (note.startTick < 0) || (note.duration < 0) || !std::isfinite(note.startTick) || !std::isfinite(note.duration))
             throw std::runtime_error("Note startTick and duration must be whole numbers and non-negative");
         sequence.addEvent(juce::MidiMessage::noteOn(note.channel, note.pitch, static_cast<juce::uint8>(note.velocity)), note.startTick);
         sequence.addEvent(juce::MidiMessage::noteOff(note.channel, note.pitch), note.startTick + note.duration);
@@ -127,4 +137,13 @@ juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, int ppq)
     midiFile.addTrack(sequence);
 
     return midiFile;
+}
+
+void exportMidiFile(const juce::MidiFile& midiFile, const std::string& path)
+{
+    juce::File file(path);
+    juce::FileOutputStream outputStream(file);
+    if (!outputStream.openedOk())
+        throw std::runtime_error("Failed to open output file");
+    midiFile.writeTo(outputStream);
 }
