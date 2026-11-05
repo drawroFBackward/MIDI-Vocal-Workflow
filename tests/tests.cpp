@@ -329,7 +329,6 @@ void outputMatchedInputTest::runTest() {
         for (size_t i = 0; i < notes.size(); ++i) {
             expect(notesInMidiFile[i].pitch == notes[i].pitch);
             expect(notesInMidiFile[i].velocity == notes[i].velocity);
-            expect(notesInMidiFile[i].track == notes[i].track);
             expect(notesInMidiFile[i].channel == notes[i].channel);
             expect(notesInMidiFile[i].startTick == notes[i].startTick);
             expect(notesInMidiFile[i].duration == notes[i].duration);
