@@ -322,9 +322,11 @@ void metadataPreservationTest::runTest() {
         juce::MidiMessage keySig = juce::MidiMessage::keySignatureMetaEvent(0, 0);
         juce::MidiMessage timeSig = juce::MidiMessage::timeSignatureMetaEvent(4, 4);
         juce::MidiMessage tempo = juce::MidiMessage::tempoMetaEvent(500000); // 120 BPM
+        juce::MidiMessage tempo2 = juce::MidiMessage::tempoMetaEvent(600000); // 100 BPM
         sequence.addEvent(keySig);
         sequence.addEvent(timeSig);
         sequence.addEvent(tempo);
+        sequence.addEvent(tempo2, 960);
         reference.addTrack(_);
         reference.addTrack(sequence);
         juce::MidiFile midiFile = notesToMidiFile(notes, reference);
@@ -337,13 +339,18 @@ void metadataPreservationTest::runTest() {
         readMidi.findAllKeySigEvents(readSequence);
         readMidi.findAllTimeSigEvents(readSequence);
         readMidi.findAllTempoEvents(readSequence);
-        expect(readSequence.getNumEvents() == 3);
-        expectEquals(readSequence.getEventPointer(0)->message.getRawData()[0], keySig.getRawData()[0]);
+        expect(readSequence.getNumEvents() == 4);
+        expectEquals(readSequence.getEventPointer(0)->message.getKeySignatureNumberOfSharpsOrFlats(), keySig.getKeySignatureNumberOfSharpsOrFlats());
         expectEquals(readSequence.getEventPointer(0)->message.getTimeStamp(), keySig.getTimeStamp());
-        expectEquals(readSequence.getEventPointer(1)->message.getRawData()[0], timeSig.getRawData()[0]);
+        int n, d;
+        readSequence.getEventPointer(1)->message.getTimeSignatureInfo(n, d);
+        expectEquals(n, 4);
+        expectEquals(d, 4);
         expectEquals(readSequence.getEventPointer(1)->message.getTimeStamp(), timeSig.getTimeStamp());
-        expectEquals(readSequence.getEventPointer(2)->message.getRawData()[0], tempo.getRawData()[0]);
+        expectEquals(readSequence.getEventPointer(2)->message.getTempoSecondsPerQuarterNote(), tempo.getTempoSecondsPerQuarterNote());
         expectEquals(readSequence.getEventPointer(2)->message.getTimeStamp(), tempo.getTimeStamp());
+        expectEquals(readSequence.getEventPointer(3)->message.getTempoSecondsPerQuarterNote(), tempo2.getTempoSecondsPerQuarterNote());
+        expectEquals(readSequence.getEventPointer(3)->message.getTimeStamp(), tempo2.getTimeStamp());
     });
 }
 
