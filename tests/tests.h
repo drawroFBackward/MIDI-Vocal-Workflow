@@ -86,3 +86,54 @@ class duplicateNotesTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+// notesToMidiFile() test functions
+class validNoteGenerationTest : public juce::UnitTest{
+    public:
+        validNoteGenerationTest() : juce::UnitTest("Valid Note Generation Test") {}
+
+        void runTest() override;
+};
+
+class incompleteNoteRejectionTest : public juce::UnitTest{
+    public:
+        incompleteNoteRejectionTest() : juce::UnitTest("Incomplete Note Rejection Test") {}
+
+        void runTest() override;
+};
+
+class invalidPPQTest : public juce::UnitTest{
+    public:
+        invalidPPQTest() : juce::UnitTest("Invalid PPQ Test") {}
+
+        void runTest() override;
+};
+
+class rejectFractionsTest : public juce::UnitTest{
+    public:
+        rejectFractionsTest() : juce::UnitTest("Reject Fractions Test") {}
+
+        void runTest() override;
+};
+
+class rejectNegativeValuesTest : public juce::UnitTest{
+    public:
+        rejectNegativeValuesTest() : juce::UnitTest("Reject Negative Values Test") {}
+
+        void runTest() override;
+};
+
+class metadataPreservationTest : public juce::UnitTest{
+    public:
+        metadataPreservationTest() : juce::UnitTest("Metadata Preservation Test") {}
+
+        void runTest() override;
+};
+
+// exportMidiFile() test functions
+class outputMatchedInputTest : public juce::UnitTest{
+    public:
+        outputMatchedInputTest() : juce::UnitTest("Output Matched Input Test") {}
+
+        void runTest() override;
+};

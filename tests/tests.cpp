@@ -201,3 +201,206 @@ void duplicateNotesTest::runTest() {
         expectEquals(tp, 2);
     });
 }
+
+void validNoteGenerationTest::runTest() {
+    testCase("Verify if valid notes are correctly converted to MIDI", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0)
+        };
+        notes[0].isComplete = true;
+        notes[1].isComplete = true;
+        juce::MidiFile reference;
+        reference.setTicksPerQuarterNote(480);
+        juce::MidiFile midiFile = notesToMidiFile(notes, reference);
+        expectEquals(midiFile.getNumTracks(), 1);
+        expectEquals(midiFile.getTrack(0)->getNumEvents(), 4); // 2 noteOn + 2 noteOff
+        expect(midiFile.getTrack(0)->getEventPointer(0)->message.isNoteOn());
+        expect(midiFile.getTrack(0)->getEventPointer(1)->message.isNoteOff());
+        expect(midiFile.getTrack(0)->getEventPointer(2)->message.isNoteOn());
+        expect(midiFile.getTrack(0)->getEventPointer(3)->message.isNoteOff());
+        expectEquals(midiFile.getTrack(0)->getEventPointer(0)->message.getNoteNumber(), 60);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(1)->message.getNoteNumber(), 60);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(2)->message.getNoteNumber(), 62);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(3)->message.getNoteNumber(), 62);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(0)->message.getVelocity(), static_cast<juce::uint8>(80));
+        expectEquals(midiFile.getTrack(0)->getEventPointer(2)->message.getVelocity(), static_cast<juce::uint8>(85));
+        expectEquals(midiFile.getTrack(0)->getEventPointer(0)->message.getTimeStamp(), 0.0);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(1)->message.getTimeStamp(), 480.0);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(2)->message.getTimeStamp(), 480.0);
+        expectEquals(midiFile.getTrack(0)->getEventPointer(3)->message.getTimeStamp(), 960.0);
+    });
+}
+
+void incompleteNoteRejectionTest::runTest() {
+    testCase("Verify if incomplete notes are rejected", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0)
+        };
+        notes[0].isComplete = true;
+        // notes[1].isComplete = false;
+        bool exceptionThrown = false;
+        try {
+            juce::MidiFile reference;
+            reference.setTicksPerQuarterNote(480);
+            juce::MidiFile midiFile = notesToMidiFile(notes, reference);
+        } catch (const std::runtime_error&) {
+            exceptionThrown = true;
+        }
+        expect(exceptionThrown);
+    });
+}
+
+void invalidPPQTest::runTest() {
+    testCase("Verify if invalid PPQ is rejected", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0)
+        };
+        notes[0].isComplete = true;
+        bool exceptionThrown = false;
+        try {
+            juce::MidiFile reference;
+            reference.setTicksPerQuarterNote(0);
+            juce::MidiFile midiFile = notesToMidiFile(notes, reference);
+        } catch (const std::invalid_argument&) {
+            exceptionThrown = true;
+        }
+        expect(exceptionThrown);
+    });
+}
+
+void rejectFractionsTest::runTest() {
+    testCase("Verify if notes with fractional startTick or duration are rejected", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.5, 480.0)
+        };
+        notes[0].isComplete = true;
+        notes[1].isComplete = true;
+        bool exceptionThrown = false;
+        try {
+            juce::MidiFile reference;
+            reference.setTicksPerQuarterNote(480);
+            juce::MidiFile midiFile = notesToMidiFile(notes, reference);
+        } catch (const std::runtime_error&) {
+            exceptionThrown = true;
+        }
+        expect(exceptionThrown);
+    });
+}
+
+void rejectNegativeValuesTest::runTest() {
+    testCase("Verify if notes with negative startTick or duration are rejected", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, -480.0, 480.0)
+        };
+        notes[0].isComplete = true;
+        notes[1].isComplete = true;
+        bool exceptionThrown = false;
+        try {
+            juce::MidiFile reference;
+            reference.setTicksPerQuarterNote(480);
+            juce::MidiFile midiFile = notesToMidiFile(notes, reference);
+        } catch (const std::runtime_error&) {
+            exceptionThrown = true;
+        }
+        expect(exceptionThrown);
+    });
+}
+
+void metadataPreservationTest::runTest() {
+    testCase("Verify if metadata is preserved in the exported MIDI file", [&] {
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0)
+        };
+        notes[0].isComplete = true;
+        juce::MidiFile reference;
+        reference.setTicksPerQuarterNote(480);
+        juce::MidiMessageSequence _, sequence;
+        juce::MidiMessage keySig = juce::MidiMessage::keySignatureMetaEvent(0, 0);
+        juce::MidiMessage timeSig = juce::MidiMessage::timeSignatureMetaEvent(4, 4);
+        juce::MidiMessage tempo = juce::MidiMessage::tempoMetaEvent(500000); // 120 BPM
+        juce::MidiMessage tempo2 = juce::MidiMessage::tempoMetaEvent(600000); // 100 BPM
+        sequence.addEvent(keySig);
+        sequence.addEvent(timeSig);
+        sequence.addEvent(tempo);
+        sequence.addEvent(tempo2, 960);
+        reference.addTrack(_);
+        reference.addTrack(sequence);
+        juce::MidiFile midiFile = notesToMidiFile(notes, reference);
+        juce::File outputFile("output_metadata.mid");
+        exportMidiFile(midiFile, "output_metadata.mid");
+        juce::FileInputStream inputStream(outputFile);
+        juce::MidiFile readMidi;
+        expect(readMidi.readFrom(inputStream));
+        juce::MidiMessageSequence readSequence;
+        readMidi.findAllKeySigEvents(readSequence);
+        readMidi.findAllTimeSigEvents(readSequence);
+        readMidi.findAllTempoEvents(readSequence);
+        expect(readSequence.getNumEvents() == 4);
+        expectEquals(readSequence.getEventPointer(0)->message.getKeySignatureNumberOfSharpsOrFlats(), keySig.getKeySignatureNumberOfSharpsOrFlats());
+        expectEquals(readSequence.getEventPointer(0)->message.getTimeStamp(), static_cast<double>(0));
+        int n, d;
+        readSequence.getEventPointer(1)->message.getTimeSignatureInfo(n, d);
+        expectEquals(n, 4);
+        expectEquals(d, 4);
+        expectEquals(readSequence.getEventPointer(1)->message.getTimeStamp(), static_cast<double>(0));
+        expectEquals(readSequence.getEventPointer(2)->message.getTempoSecondsPerQuarterNote(), tempo.getTempoSecondsPerQuarterNote());
+        expectEquals(readSequence.getEventPointer(2)->message.getTimeStamp(), static_cast<double>(0));
+        expectEquals(readSequence.getEventPointer(3)->message.getTempoSecondsPerQuarterNote(), tempo2.getTempoSecondsPerQuarterNote());
+        expectEquals(readSequence.getEventPointer(3)->message.getTimeStamp(), static_cast<double>(960));
+    });
+}
+
+void outputMatchedInputTest::runTest() {
+    testCase("Verify if exported MIDI matches input notes", [&] {
+        std::vector<Note> oldNotes = {
+            Note(40, 80, 0, 1, 0.0, 480.0),
+            Note(41, 80, 0, 1, 480.0, 480.0),
+            Note(42, 80, 0, 1, 960.0, 480.0),
+            Note(43, 80, 0, 1, 1440.0, 480.0)
+        };
+        oldNotes[0].isComplete = true;
+        oldNotes[1].isComplete = true;
+        oldNotes[2].isComplete = true;
+        oldNotes[3].isComplete = true;
+        juce::MidiFile reference;
+        reference.setTicksPerQuarterNote(480);
+        juce::MidiFile oldMidiFile = notesToMidiFile(oldNotes, reference);
+        std::vector<Note> notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(60, 80, 0, 2, 0.0, 240.0),
+            Note(62, 85, 0, 1, 480.0, 480.0)
+        };
+        notes[0].isComplete = true;
+        notes[1].isComplete = true;
+        notes[2].isComplete = true;
+        juce::MidiFile outputMidiFile = notesToMidiFile(notes, reference);
+        juce::MidiFile createdMidiFile;
+        try {
+            exportMidiFile(oldMidiFile, "output.mid");
+            exportMidiFile(outputMidiFile, "output.mid"); //Overwrite the previous file
+            juce::File inputFile("output.mid");
+            juce::FileInputStream inputStream(inputFile);
+            if(!createdMidiFile.readFrom(inputStream))
+                expect(false);
+        } catch (const std::exception&) {
+            expect(false);
+        }
+        expectEquals(static_cast<int>(createdMidiFile.getTimeFormat()), 480);
+        auto notesInMidiFile = extractNotes(createdMidiFile);
+        if(notesInMidiFile.size() != notes.size()) {
+            expect(false);
+            return;
+        }
+        for (size_t i = 0; i < notes.size(); ++i) {
+            expect(notesInMidiFile[i].pitch == notes[i].pitch);
+            expect(notesInMidiFile[i].velocity == notes[i].velocity);
+            expect(notesInMidiFile[i].channel == notes[i].channel);
+            expect(notesInMidiFile[i].startTick == notes[i].startTick);
+            expect(notesInMidiFile[i].duration == notes[i].duration);
+        }
+    });
+}
