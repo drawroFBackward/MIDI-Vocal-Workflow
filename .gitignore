@@ -67,3 +67,4 @@ vcpkg_installed/
 Testing/
 .cache/
 /output.mid
+/output_metadata.mid
