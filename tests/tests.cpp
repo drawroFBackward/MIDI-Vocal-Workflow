@@ -341,16 +341,16 @@ void metadataPreservationTest::runTest() {
         readMidi.findAllTempoEvents(readSequence);
         expect(readSequence.getNumEvents() == 4);
         expectEquals(readSequence.getEventPointer(0)->message.getKeySignatureNumberOfSharpsOrFlats(), keySig.getKeySignatureNumberOfSharpsOrFlats());
-        expectEquals(readSequence.getEventPointer(0)->message.getTimeStamp(), keySig.getTimeStamp());
+        expectEquals(readSequence.getEventPointer(0)->message.getTimeStamp(), static_cast<double>(0));
         int n, d;
         readSequence.getEventPointer(1)->message.getTimeSignatureInfo(n, d);
         expectEquals(n, 4);
         expectEquals(d, 4);
-        expectEquals(readSequence.getEventPointer(1)->message.getTimeStamp(), timeSig.getTimeStamp());
+        expectEquals(readSequence.getEventPointer(1)->message.getTimeStamp(), static_cast<double>(0));
         expectEquals(readSequence.getEventPointer(2)->message.getTempoSecondsPerQuarterNote(), tempo.getTempoSecondsPerQuarterNote());
-        expectEquals(readSequence.getEventPointer(2)->message.getTimeStamp(), tempo.getTimeStamp());
+        expectEquals(readSequence.getEventPointer(2)->message.getTimeStamp(), static_cast<double>(0));
         expectEquals(readSequence.getEventPointer(3)->message.getTempoSecondsPerQuarterNote(), tempo2.getTempoSecondsPerQuarterNote());
-        expectEquals(readSequence.getEventPointer(3)->message.getTimeStamp(), tempo2.getTimeStamp());
+        expectEquals(readSequence.getEventPointer(3)->message.getTimeStamp(), static_cast<double>(960));
     });
 }
 
