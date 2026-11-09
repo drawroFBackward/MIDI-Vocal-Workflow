@@ -153,3 +153,33 @@ void exportMidiFile(const juce::MidiFile& midiFile, const std::string& path)
     if (!midiFile.writeTo(outputStream))
         throw std::runtime_error("Failed to write MIDI file");
 }
+
+void BenchmarkResults::evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName)
+{
+    int tp = truePositiveNotes(originalNotes, benchmarkNotes, indices);
+    int fp = static_cast<int>(indices.size()) - tp;
+    int fn = static_cast<int>(benchmarkNotes.size()) - tp;
+
+    double precision = (tp + fp > 0) ? static_cast<double>(tp) / (tp + fp) : throw std::runtime_error("Precision undefined due to zero division");
+    double recall = (tp + fn > 0) ? static_cast<double>(tp) / (tp + fn) : throw std::runtime_error("Recall undefined due to zero division");
+    double f1 = (precision + recall > 0) ? 2.0 * (precision * recall) / (precision + recall) : throw std::runtime_error("F1 score undefined due to zero division");
+
+    songNames.push_back(songName);
+    TP.push_back(tp);
+    FP.push_back(fp);
+    FN.push_back(fn);
+    this->precision.push_back(precision);
+    this->recall.push_back(recall);
+    f1Score.push_back(f1);
+}
+
+void BenchmarkResults::printResults()
+{
+    for (std::size_t i = 0; i < songNames.size(); ++i)
+    {
+        std::cout << "Song: " << songNames[i] << "\n";
+        std::cout << "TP: " << TP[i] << ", FP: " << FP[i] << ", FN: " << FN[i] << "\n";
+        std::cout << "Precision: " << precision[i] << ", Recall: " << recall[i] << ", F1 Score: " << f1Score[i] << "\n";
+        std::cout << "--------------------------\n";
+    }
+}
