@@ -7,10 +7,6 @@
 
 int wmain(int argc, wchar_t* argv[])
 {
-    // Step 1: Specify the path to your MIDI file
-    //std::string originalMidiFilePath = "..\\MIDI-Vocal-Workflow-Test-Data\\Original_空に免じて.mid";
-    //std::string benchmarkMidiFileName = "..\\MIDI-Vocal-Workflow-Test-Data\\Modified_空に免じて.mid";
-
     // Step 1: Exit on no input files
     
     if (argc == 1)
@@ -24,34 +20,31 @@ int wmain(int argc, wchar_t* argv[])
         return 1;
     }
     
-    
+    if (std::wstring(argv[1]) == L"--benchmark-dir")
+    {
+        //
+    }
 
     // Step 2: Read the MIDI file, extract notes, and handle exceptions
     juce::MidiFile originalMidiFile, benchmarkMidiFile;
     std::vector<Note> notes, correctNotes;
-    std::string originalMidiFileName = juce::String(argv[1]).toStdString();
-    std::string benchmarkMidiFileName = juce::String(argv[2]).toStdString();
+    std::string originalMidiFilePath = juce::String(argv[1]).toStdString();
+    std::string benchmarkMidiFilePath = juce::String(argv[2]).toStdString();
 
-    std::cout << "Original MIDI File: " << originalMidiFileName << "\n";
-    std::cout << "Benchmark MIDI File: " << benchmarkMidiFileName << "\n";
+    std::cout << "Original MIDI File: " << originalMidiFilePath << "\n";
+    std::cout << "Benchmark MIDI File: " << benchmarkMidiFilePath << "\n";
+
+    BenchmarkResult result;
 
     try
     {
-        originalMidiFile = readMidiFile(originalMidiFileName);
-        benchmarkMidiFile = readMidiFile(benchmarkMidiFileName);
-        notes = extractNotes(originalMidiFile);
-        correctNotes = extractNotes(benchmarkMidiFile);
+        result = runBenchmark(originalMidiFilePath, benchmarkMidiFilePath);
     }
     catch (const std::exception& e)
     {
         std::cerr << e.what() << "\n";
         return 1;
     }
-
-    // Step 3: Run selection function and compare results
-    auto selectedIndices = selectByPitch(notes, 60);
-
-    BenchmarkResult result = evaluate(notes, correctNotes, selectedIndices, originalMidiFileName);
     std::cout << "Benchmark Result for " << result.songName << ":\n";
     std::cout << "True Positives: " << result.TP << "\n";
     std::cout << "False Positives: " << result.FP << "\n";
@@ -59,17 +52,11 @@ int wmain(int argc, wchar_t* argv[])
     std::cout << "Precision: " << result.precision << "\n";
     std::cout << "Recall: " << result.recall << "\n";
     std::cout << "F1 Score: " << result.f1 << "\n";
-    
 
     // Step 4: Export the selected notes to a new MIDI file
-    auto selectedNotes = indicesToNotes(notes, selectedIndices);
-    std::string outputMidiFileName = "Vocal_";
-    // outputMidiFileName += originalMidiFileName;
-    outputMidiFileName += ".mid";
     try
     {
-        juce::MidiFile outputMidiFile = notesToMidiFile(selectedNotes, originalMidiFile);
-        exportMidiFile(outputMidiFile, outputMidiFileName);
+        runAndExport(originalMidiFilePath);
     }
     catch(const std::exception& e)
     {
@@ -77,6 +64,7 @@ int wmain(int argc, wchar_t* argv[])
         return 1;
     }
 
+    /*
     // reimport test
 
     try
@@ -89,7 +77,8 @@ int wmain(int argc, wchar_t* argv[])
     {
         std::cerr << e.what() << "\n";
         return 1;
-    }
+    }    
+    */   
 
     return 0;
 }

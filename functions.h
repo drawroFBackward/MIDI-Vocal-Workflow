@@ -8,6 +8,11 @@
 #include <cmath>
 #include "melody.h"
 
+struct FilePair{
+    std::string original;
+    std::string benchmark;
+};
+
 struct BenchmarkResult{
     std::string songName; // Song name
     int TP; // True Positives
@@ -21,6 +26,8 @@ struct BenchmarkResult{
 
 BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName = "");
 
+BenchmarkResult runBenchmark(const std::string& originalMidiFilePath, const std::string& benchmarkMidiFilePath);
+
 struct BenchmarkReport{
     std::vector<BenchmarkResult> results;
     void addResult(const BenchmarkResult& result);
@@ -33,7 +40,13 @@ juce::MidiFile readMidiFile(const std::string& path);
 
 std::vector<Note> extractNotes(const juce::MidiFile& midiFile);
 
+//selection functions
+
 std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPitch);
+
+// run all selection functions and evaluation
+
+std::vector<std::size_t> selectNotes(const std::vector<Note>& notes);
 
 std::vector<Note> indicesToNotes(const std::vector<Note>& notes, const std::vector<std::size_t>& indices);
 
@@ -42,3 +55,9 @@ int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<
 juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, const juce::MidiFile& reference);
 
 void exportMidiFile(const juce::MidiFile& midiFile, const std::string& path);
+
+void runAndExport(const std::string& originalMidiFilePath);
+
+std::vector<std::string> findOriginalMidiFiles(const std::string& directoryPath);
+
+std::vector<FilePair> pairFiles(const std::string& directoryPath);

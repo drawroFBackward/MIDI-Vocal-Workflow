@@ -81,6 +81,13 @@ std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPi
     return selectedIndices;
 }
 
+std::vector<std::size_t> selectNotes(const std::vector<Note>& notes)
+{
+    std::vector<std::size_t> selectedIndices = selectByPitch(notes, 60);
+    // Add more selection in future
+    return selectedIndices;
+}
+
 std::vector<Note> indicesToNotes(const std::vector<Note>& notes, const std::vector<std::size_t>& indices)
 {
     std::vector<Note> selectedNotes;
@@ -173,4 +180,69 @@ BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vect
     result.recall = r;
     result.f1 = f;
     return result;
+}
+
+BenchmarkResult runBenchmark(const std::string& originalMidiFilePath, const std::string& benchmarkMidiFilePath)
+{
+    juce::MidiFile originalMidiFile = readMidiFile(originalMidiFilePath);
+    juce::MidiFile benchmarkMidiFile = readMidiFile(benchmarkMidiFilePath);
+
+    std::vector<Note> originalNotes = extractNotes(originalMidiFile);
+    std::vector<Note> benchmarkNotes = extractNotes(benchmarkMidiFile);
+
+    std::vector<std::size_t> selectedIndices = selectNotes(originalNotes);
+
+    return evaluate(originalNotes, benchmarkNotes, selectedIndices, originalMidiFilePath);
+}
+
+void runAndExport(const std::string& originalMidiFilePath)
+{
+    juce::MidiFile originalMidiFile = readMidiFile(originalMidiFilePath);
+    std::vector<Note> originalNotes = extractNotes(originalMidiFile);
+    auto selectedNotes = indicesToNotes(originalNotes, selectNotes(originalNotes));
+    juce::MidiFile outputMidiFile = notesToMidiFile(selectedNotes, originalMidiFile);
+    std::string outputMidiFilePath = "Vocal_";
+    //outputMidiFilePath += originalMidiFilePath; - need to figure out how to extract just the file name without the path
+    outputMidiFilePath += ".mid";
+    exportMidiFile(outputMidiFile, outputMidiFilePath);
+}
+
+std::vector<std::string> findOriginalMidiFiles(const std::string& directoryPath)
+{
+    std::vector<std::string> originalFiles;
+    juce::File directory(directoryPath);
+    if (!directory.isDirectory())
+        return originalFiles;
+    // File is an original MIDI file if it has the .mid extension and it has Original_ as a prefix in the file name
+    juce::Array<juce::File> files = directory.findChildFiles(juce::File::findFiles, false, "*.mid");
+    for (auto& file : files)
+    {
+        if (file.getFileName().startsWith("Original_"))
+        {
+            originalFiles.push_back(file.getFullPathName().toStdString());
+        }
+    }
+    return originalFiles;
+}
+
+std::vector<FilePair> pairFiles(const std::string& directoryPath)
+{
+    std::vector<FilePair> filePairs;
+    std::vector<std::string> originalFiles = findOriginalMidiFiles(directoryPath);
+    for (const auto& originalFile : originalFiles)
+    {
+        juce::String originalFileName = juce::File(originalFile).getFileName();
+        
+        std::string benchmarkFileName = "Modified_" + originalFileName.toStdString().substr(std::string("Original_").length());
+        juce::File benchmarkFile(directoryPath + "/" + benchmarkFileName);
+        if (benchmarkFile.existsAsFile())
+        {
+            FilePair pair;
+            pair.original = originalFile;
+            pair.benchmark = benchmarkFile.getFullPathName().toStdString();
+            filePairs.push_back(pair);
+        }
+    }
+
+    return filePairs;
 }
