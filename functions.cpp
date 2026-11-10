@@ -160,26 +160,15 @@ void BenchmarkResults::evaluate(const std::vector<Note>& originalNotes, const st
     int fp = static_cast<int>(indices.size()) - tp;
     int fn = static_cast<int>(benchmarkNotes.size()) - tp;
 
-    double precision = (tp + fp > 0) ? static_cast<double>(tp) / (tp + fp) : throw std::runtime_error("Precision undefined due to zero division");
-    double recall = (tp + fn > 0) ? static_cast<double>(tp) / (tp + fn) : throw std::runtime_error("Recall undefined due to zero division");
-    double f1 = (precision + recall > 0) ? 2.0 * (precision * recall) / (precision + recall) : throw std::runtime_error("F1 score undefined due to zero division");
+    double p = (tp + fp > 0) ? static_cast<double>(tp) / (tp + fp) : throw std::runtime_error("Precision undefined due to zero division");
+    double r = (tp + fn > 0) ? static_cast<double>(tp) / (tp + fn) : throw std::runtime_error("Recall undefined due to zero division");
+    double f = (p + r > 0) ? 2.0 * (p * r) / (p + r) : throw std::runtime_error("F1 score undefined due to zero division");
 
-    songNames.push_back(songName);
-    TP.push_back(tp);
-    FP.push_back(fp);
-    FN.push_back(fn);
-    this->precision.push_back(precision);
-    this->recall.push_back(recall);
-    f1Score.push_back(f1);
-}
-
-void BenchmarkResults::printResults()
-{
-    for (std::size_t i = 0; i < songNames.size(); ++i)
-    {
-        std::cout << "Song: " << songNames[i] << "\n";
-        std::cout << "TP: " << TP[i] << ", FP: " << FP[i] << ", FN: " << FN[i] << "\n";
-        std::cout << "Precision: " << precision[i] << ", Recall: " << recall[i] << ", F1 Score: " << f1Score[i] << "\n";
-        std::cout << "--------------------------\n";
-    }
+    this->songName = songName;
+    TP = tp;
+    FP = fp;
+    FN = fn;
+    precision = p;
+    recall = r;
+    f1 = f;
 }

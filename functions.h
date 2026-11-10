@@ -9,16 +9,15 @@
 #include "melody.h"
 
 struct BenchmarkResults{
-    std::vector<std::string> songNames; // Names of the songs being evaluated
-    std::vector<int> TP; //True Positives
-    std::vector<int> FP; //False Positives
-    std::vector<int> FN; //False Negatives
-    std::vector<double> precision; // Precision
-    std::vector<double> recall; // Recall
-    std::vector<double> f1Score; // F1 Score
+    std::string songName; // Song name
+    int TP; // True Positives
+    int FP; // False Positives
+    int FN; // False Negatives
+    double precision; // Precision
+    double recall; // Recall
+    double f1; // F1 Score
     BenchmarkResults();
     void evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName = "...");
-    void printResults();
 };
 
 juce::File filePath(std::string path);
