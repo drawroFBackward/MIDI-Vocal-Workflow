@@ -424,21 +424,23 @@ void evaluate_knownResultTest::runTest() {
         expectEquals(result.TP, 1);
         expectEquals(result.FP, 1);
         expectEquals(result.FN, 1);
-        expectEquals(result.precision, 2.0/3.0);
+        expectEquals(result.precision, 0.5);
         expectEquals(result.recall, 0.5);
-        expectEquals(result.f1, 0.8);
+        expectEquals(result.f1, 0.5);
     });
 }
 
 void evaluate_zeroResultTest::runTest() {
     testCase("Evaluate zero result", [&] {
-        std::vector<Note> originalNotes = {};
-        std::vector<Note> benchmarkNotes = {};
+        std::vector<Note> Notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0)
+        };
         std::vector<std::size_t> selectedIndices = {};
-        BenchmarkResult result = evaluate(originalNotes, benchmarkNotes, selectedIndices, "test_song");
+        BenchmarkResult result = evaluate(Notes, Notes, selectedIndices, "test_song");
         expectEquals(result.TP, 0);
         expectEquals(result.FP, 0);
-        expectEquals(result.FN, 0);
+        expectEquals(result.FN, 2);
         expectEquals(result.precision, 0.0);
         expectEquals(result.recall, 0.0);
         expectEquals(result.f1, 0.0);
