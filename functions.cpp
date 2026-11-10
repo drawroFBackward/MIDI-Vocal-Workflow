@@ -154,7 +154,7 @@ void exportMidiFile(const juce::MidiFile& midiFile, const std::string& path)
         throw std::runtime_error("Failed to write MIDI file");
 }
 
-void BenchmarkResults::evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName)
+BenchmarkResults evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName = "")
 {
     int tp = truePositiveNotes(originalNotes, benchmarkNotes, indices);
     int fp = static_cast<int>(indices.size()) - tp;
@@ -164,11 +164,13 @@ void BenchmarkResults::evaluate(const std::vector<Note>& originalNotes, const st
     double r = (tp + fn > 0) ? static_cast<double>(tp) / (tp + fn) : 0;
     double f = (p + r > 0) ? 2.0 * (p * r) / (p + r) : 0;
 
-    this->songName = songName;
-    TP = tp;
-    FP = fp;
-    FN = fn;
-    precision = p;
-    recall = r;
-    f1 = f;
+    BenchmarkResults result;
+    result.songName = songName;
+    result.TP = tp;
+    result.FP = fp;
+    result.FN = fn;
+    result.precision = p;
+    result.recall = r;
+    result.f1 = f;
+    return result;
 }

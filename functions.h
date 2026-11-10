@@ -16,9 +16,10 @@ struct BenchmarkResults{
     double precision; // Precision
     double recall; // Recall
     double f1; // F1 Score
-    BenchmarkResults();
-    void evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName = "...");
+    BenchmarkResults(): songName(""), TP(0), FP(0), FN(0), precision(0), recall(0), f1(0) {}
 };
+
+BenchmarkResults evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName = "");
 
 struct Result{
     std::vector<BenchmarkResults> results;
