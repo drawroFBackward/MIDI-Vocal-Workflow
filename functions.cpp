@@ -160,9 +160,9 @@ void BenchmarkResults::evaluate(const std::vector<Note>& originalNotes, const st
     int fp = static_cast<int>(indices.size()) - tp;
     int fn = static_cast<int>(benchmarkNotes.size()) - tp;
 
-    double p = (tp + fp > 0) ? static_cast<double>(tp) / (tp + fp) : throw std::runtime_error("Precision undefined due to zero division");
-    double r = (tp + fn > 0) ? static_cast<double>(tp) / (tp + fn) : throw std::runtime_error("Recall undefined due to zero division");
-    double f = (p + r > 0) ? 2.0 * (p * r) / (p + r) : throw std::runtime_error("F1 score undefined due to zero division");
+    double p = (tp + fp > 0) ? static_cast<double>(tp) / (tp + fp) : 0;
+    double r = (tp + fn > 0) ? static_cast<double>(tp) / (tp + fn) : 0;
+    double f = (p + r > 0) ? 2.0 * (p * r) / (p + r) : 0;
 
     this->songName = songName;
     TP = tp;

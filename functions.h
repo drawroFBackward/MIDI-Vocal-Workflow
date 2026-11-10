@@ -20,6 +20,12 @@ struct BenchmarkResults{
     void evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName = "...");
 };
 
+struct Result{
+    std::vector<BenchmarkResults> results;
+    void addResult(const BenchmarkResults& result);
+    void clearResults();
+};
+
 juce::File filePath(std::string path);
 
 juce::MidiFile readMidiFile(const std::string& path);
