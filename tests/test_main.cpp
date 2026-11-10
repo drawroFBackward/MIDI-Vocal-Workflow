@@ -25,6 +25,9 @@ int main() {
     metadataPreservationTest Q;
     // exportMidiFile tests
     outputMatchedInputTest R;
+    // evaluate tests
+    evaluate_knownResultTest S;
+    evaluate_zeroResultTest T;
 
     // run all tests
     juce::UnitTestRunner runner;

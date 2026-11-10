@@ -404,3 +404,43 @@ void outputMatchedInputTest::runTest() {
         }
     });
 }
+
+void evaluate_knownResultTest::runTest() {
+    testCase("Evaluate known result", [&] {
+        std::vector<Note> originalNotes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0),
+            Note(64, 90, 0, 1, 960.0, 480.0),
+            Note(65, 95, 0, 1, 1440.0, 480.0)
+        };
+        std::vector<Note> benchmarkNotes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0)
+        };
+        for (auto& note : originalNotes) note.isComplete = true;
+        for (auto& note : benchmarkNotes) note.isComplete = true;
+        std::vector<std::size_t> selectedIndices = {0, 3};
+        BenchmarkResult result = evaluate(originalNotes, benchmarkNotes, selectedIndices, "test_song");
+        expectEquals(result.TP, 1);
+        expectEquals(result.FP, 1);
+        expectEquals(result.FN, 1);
+        expectEquals(result.precision, 2.0/3.0);
+        expectEquals(result.recall, 0.5);
+        expectEquals(result.f1, 0.8);
+    });
+}
+
+void evaluate_zeroResultTest::runTest() {
+    testCase("Evaluate zero result", [&] {
+        std::vector<Note> originalNotes = {};
+        std::vector<Note> benchmarkNotes = {};
+        std::vector<std::size_t> selectedIndices = {};
+        BenchmarkResult result = evaluate(originalNotes, benchmarkNotes, selectedIndices, "test_song");
+        expectEquals(result.TP, 0);
+        expectEquals(result.FP, 0);
+        expectEquals(result.FN, 0);
+        expectEquals(result.precision, 0.0);
+        expectEquals(result.recall, 0.0);
+        expectEquals(result.f1, 0.0);
+    });
+}

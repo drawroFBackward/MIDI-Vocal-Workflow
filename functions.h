@@ -8,7 +8,7 @@
 #include <cmath>
 #include "melody.h"
 
-struct BenchmarkResults{
+struct BenchmarkResult{
     std::string songName; // Song name
     int TP; // True Positives
     int FP; // False Positives
@@ -16,14 +16,14 @@ struct BenchmarkResults{
     double precision; // Precision
     double recall; // Recall
     double f1; // F1 Score
-    BenchmarkResults(): songName(""), TP(0), FP(0), FN(0), precision(0), recall(0), f1(0) {}
+    BenchmarkResult(): songName(""), TP(0), FP(0), FN(0), precision(0), recall(0), f1(0) {}
 };
 
-BenchmarkResults evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName = "");
+BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName = "");
 
-struct Result{
-    std::vector<BenchmarkResults> results;
-    void addResult(const BenchmarkResults& result);
+struct BenchmarkReport{
+    std::vector<BenchmarkResult> results;
+    void addResult(const BenchmarkResult& result);
     void clearResults();
 };
 

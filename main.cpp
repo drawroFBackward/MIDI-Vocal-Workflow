@@ -51,21 +51,15 @@ int wmain(int argc, wchar_t* argv[])
     // Step 3: Run selection function and compare results
     auto selectedIndices = selectByPitch(notes, 60);
 
-    int tp = truePositiveNotes(notes, correctNotes, selectedIndices);
-    int fp = static_cast<int>(selectedIndices.size()) - tp;
-    int fn = static_cast<int>(correctNotes.size()) - tp;
-
-    std::cout << "True Positives: " << tp << "\n";
-    std::cout << "False Positives: " << fp << "\n";
-    std::cout << "False Negatives: " << fn << "\n";
-
-    double precision = tp + fp > 0 ? static_cast<double>(tp) / (tp + fp) : 0.0;
-    double recall = tp + fn > 0 ? static_cast<double>(tp) / (tp + fn) : 0.0;
-    double f1 = precision + recall > 0 ? 2 * (precision * recall) / (precision + recall) : 0.0;
-
-    std::cout << "Precision: " << precision << "\n";
-    std::cout << "Recall: " << recall << "\n";
-    std::cout << "F1 Score: " << f1 << "\n";
+    BenchmarkResult result = evaluate(notes, correctNotes, selectedIndices, originalMidiFileName);
+    std::cout << "Benchmark Result for " << result.songName << ":\n";
+    std::cout << "True Positives: " << result.TP << "\n";
+    std::cout << "False Positives: " << result.FP << "\n";
+    std::cout << "False Negatives: " << result.FN << "\n";
+    std::cout << "Precision: " << result.precision << "\n";
+    std::cout << "Recall: " << result.recall << "\n";
+    std::cout << "F1 Score: " << result.f1 << "\n";
+    
 
     // Step 4: Export the selected notes to a new MIDI file
     auto selectedNotes = indicesToNotes(notes, selectedIndices);

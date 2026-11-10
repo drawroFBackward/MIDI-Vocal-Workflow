@@ -137,3 +137,18 @@ class outputMatchedInputTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+// evaluate() test functions
+class evaluate_knownResultTest : public juce::UnitTest{
+    public:
+        evaluate_knownResultTest() : juce::UnitTest("Evaluate Known Result Test") {}
+
+        void runTest() override;
+};
+
+class evaluate_zeroResultTest : public juce::UnitTest{
+    public:
+        evaluate_zeroResultTest() : juce::UnitTest("Evaluate Zero Result Test") {}
+
+        void runTest() override;
+};
