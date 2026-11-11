@@ -203,7 +203,6 @@ void runAndExport(const juce::String& originalMidiFilePath)
     juce::MidiFile outputMidiFile = notesToMidiFile(selectedNotes, originalMidiFile);
     juce::String outputMidiFilePath = "Vocal_";
     outputMidiFilePath += juce::File(originalMidiFilePath).getFileName();
-    outputMidiFilePath += ".mid";
     exportMidiFile(outputMidiFile, outputMidiFilePath);
 }
 
