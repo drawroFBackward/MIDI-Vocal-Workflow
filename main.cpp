@@ -11,65 +11,56 @@ int wmain(int argc, wchar_t* argv[])
     
     if (argc == 1)
     {
-        std::cout << "Please check input arguments. Usage: <program> <original_midi_file> <benchmark_midi_file>\n";
+        std::cout << "Please check input arguments.\nUsage: <program> <original_midi_file>\nUsage for training mode: <program> --dir <directory_path>\n";
         return 0;
     }
-    if (argc != 3)
+    if (argc == 2)
     {
-        std::cout << "Incorrect number of arguments. Usage: <program> <original_midi_file> <benchmark_midi_file>\n";
-        return 1;
-    }
-    
-    if (std::wstring(argv[1]) == L"--benchmark-dir")
-    {
-        std::vector<FilePair> filePairs;
+        // Export mode
         try
         {
-            filePairs = pairFiles(juce::String(argv[2]));
+            runAndExport(juce::String(argv[1]));
         }
-        catch (const std::exception& e)
+        catch(const std::exception& e)
         {
-            std::cerr << e.what() << "\n";
+            std::cerr << e.what() << '\n';
             return 1;
         }
     }
-
-    // Step 2: Read the MIDI file, extract notes, and handle exceptions
-    juce::MidiFile originalMidiFile, benchmarkMidiFile;
-    std::vector<Note> notes, correctNotes;
-    juce::String originalMidiFilePath = juce::String(argv[1]);
-    juce::String benchmarkMidiFilePath = juce::String(argv[2]);
-
-    std::cout << "Original MIDI File: " << originalMidiFilePath << "\n";
-    std::cout << "Benchmark MIDI File: " << benchmarkMidiFilePath << "\n";
-
-    BenchmarkResult result;
-
+    if (argc != 3)
+    {
+        std::cout << "Incorrect number of arguments. \nUsage: <program> <original_midi_file> <benchmark_midi_file>\nUsage for directory mode: <program> --dir <directory_path>\n";
+        return 1;
+    }
+    
+    // training mode
+    std::vector<FilePair> filePairs;
     try
     {
-        result = runBenchmark(originalMidiFilePath, benchmarkMidiFilePath);
+        filePairs = pairFiles(juce::String(argv[2]));
+        BenchmarkReport report;
+        for (const auto& pair : filePairs)
+        {
+            juce::String originalMidiFilePath = pair.original;
+            juce::String benchmarkMidiFilePath = pair.benchmark;
+            BenchmarkResult result = runBenchmark(originalMidiFilePath, benchmarkMidiFilePath);
+            report.addResult(result);
+        }
+        // Optionally, you can print the report here
+        for (const auto& result : report.results)
+        {
+            std::cout << "Benchmark Result for " << result.songName << ":\n";
+            std::cout << "True Positives: " << result.TP << "\n";
+            std::cout << "False Positives: " << result.FP << "\n";
+            std::cout << "False Negatives: " << result.FN << "\n";
+            std::cout << "Precision: " << result.precision << "\n";
+            std::cout << "Recall: " << result.recall << "\n";
+            std::cout << "F1 Score: " << result.f1 << "\n";
+        }
     }
     catch (const std::exception& e)
     {
         std::cerr << e.what() << "\n";
-        return 1;
-    }
-    std::cout << "Benchmark Result for " << result.songName << ":\n";
-    std::cout << "True Positives: " << result.TP << "\n";
-    std::cout << "False Positives: " << result.FP << "\n";
-    std::cout << "False Negatives: " << result.FN << "\n";
-    std::cout << "Precision: " << result.precision << "\n";
-    std::cout << "Recall: " << result.recall << "\n";
-    std::cout << "F1 Score: " << result.f1 << "\n";
-
-    // Step 4: Export the selected notes to a new MIDI file
-    try
-    {
-        runAndExport(originalMidiFilePath);
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
         return 1;
     }
 
