@@ -211,7 +211,7 @@ std::vector<juce::String> findOriginalMidiFiles(const juce::String& directoryPat
     std::vector<juce::String> originalFiles;
     juce::File directory(directoryPath);
     if (!directory.isDirectory())
-        return originalFiles;
+        throw std::runtime_error("Directory does not exist");
     // File is an original MIDI file if it has the .mid extension and it has Original_ as a prefix in the file name
     juce::Array<juce::File> files = directory.findChildFiles(juce::File::findFiles, false, "*.mid");
     for (auto& file : files)
@@ -221,6 +221,8 @@ std::vector<juce::String> findOriginalMidiFiles(const juce::String& directoryPat
             originalFiles.push_back(file.getFullPathName());
         }
     }
+    if (originalFiles.empty())
+        throw std::runtime_error("No original MIDI files found in the directory");
     return originalFiles;
 }
 
@@ -241,8 +243,11 @@ std::vector<FilePair> pairFiles(const juce::String& directoryPath)
             pair.benchmark = benchmarkFile.getFullPathName();
             filePairs.push_back(pair);
         }
+        else
+        {
+            std::cout << "Benchmark file not found for " << originalFileName << "\n";
+        }
     }
-
     return filePairs;
 }
 
