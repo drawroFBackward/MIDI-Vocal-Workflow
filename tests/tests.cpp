@@ -451,10 +451,13 @@ void pairFiles_generalTest::runTest() {
     testCase("Pair Files General Test", [&] {
         juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("pairFilesTest");
         tempDir.createDirectory();
+        expect(tempDir.exists());
         juce::File originalFile = tempDir.getChildFile("Original_Test.mid");
         juce::File benchmarkFile = tempDir.getChildFile("Modified_Test.mid");
-        originalFile.create();
-        benchmarkFile.create();
+        expect(originalFile.create().wasOk());
+        expect(benchmarkFile.create().wasOk());
+        expect(originalFile.existsAsFile());
+        expect(benchmarkFile.existsAsFile());
         std::vector<FilePair> filePairs = pairFiles(tempDir.getFullPathName());
         expectEquals(static_cast<int>(filePairs.size()), 1);
         expectEquals(filePairs[0].original, originalFile.getFullPathName());
@@ -466,8 +469,10 @@ void pairFiles_noOriginalFilesTest::runTest() {
     testCase("Pair Files No Original Files Test", [&] {
         juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("pairFilesTestNoOriginal");
         tempDir.createDirectory();
+        expect(tempDir.exists());
         juce::File benchmarkFile = tempDir.getChildFile("Modified_Test.mid");
-        benchmarkFile.create();
+        expect(benchmarkFile.create().wasOk());
+        expect(benchmarkFile.existsAsFile());
         bool A = false;
         try {
             std::vector<FilePair> filePairs = pairFiles(tempDir.getFullPathName());
@@ -483,8 +488,10 @@ void pairFiles_noBenchmarkFilesTest::runTest() {
     testCase("Pair Files No Benchmark Files Test", [&] {
         juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("pairFilesTestNoBenchmark");
         tempDir.createDirectory();
+        expect(tempDir.exists());
         juce::File originalFile = tempDir.getChildFile("Original_Test.mid");
-        originalFile.create();
+        expect(originalFile.create().wasOk());
+        expect(originalFile.existsAsFile());
         bool A = false;
         try {
             std::vector<FilePair> filePairs = pairFiles(tempDir.getFullPathName());
@@ -512,14 +519,21 @@ void pairFiles_unicodeFileNamesTest::runTest() {
     testCase("Pair Files Unicode File Names Test", [&] {
         juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("pairFilesTestUnicode");
         tempDir.createDirectory();
+        expect(tempDir.exists());
         juce::File originalFile = tempDir.getChildFile("Original_千本桜.mid");
         juce::File benchmarkFile = tempDir.getChildFile("Modified_千本桜.mid");
-        originalFile.create();
-        benchmarkFile.create();
+        expect(originalFile.create().wasOk());
+        expect(benchmarkFile.create().wasOk());
+        expect(originalFile.existsAsFile());
+        expect(benchmarkFile.existsAsFile());
         std::vector<FilePair> filePairs = pairFiles(tempDir.getFullPathName());
-        expectEquals(static_cast<int>(filePairs.size()), 1);
-        expectEquals(filePairs[0].original, tempDir.getFullPathName() + "/Original_千本桜.mid");
-        expectEquals(filePairs[0].benchmark, tempDir.getFullPathName() + "/Modified_千本桜.mid");
+        if (filePairs.size() != 1) 
+        {
+            expect(false);
+            return;
+        }
+        expectEquals(filePairs[0].original, originalFile.getFullPathName());
+        expectEquals(filePairs[0].benchmark, benchmarkFile.getFullPathName());
         tempDir.deleteRecursively();
     });
 }

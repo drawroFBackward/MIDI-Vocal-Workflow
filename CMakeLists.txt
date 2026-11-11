@@ -40,6 +40,11 @@ target_sources(MIDIVocalWorkflowTests
         functions.cpp
 )
 
+if(MSVC)
+    target_compile_options(MIDIVocalWorkflowTests PRIVATE /utf-8)
+    target_compile_options(MIDIVocalWorkflow PRIVATE /utf-8)
+endif()
+
 target_link_libraries(MIDIVocalWorkflowTests
     PRIVATE
         juce::juce_core
