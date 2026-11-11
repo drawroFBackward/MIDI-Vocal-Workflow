@@ -30,7 +30,7 @@ int wmain(int argc, wchar_t* argv[])
     }
     if (argc != 3 || std::wstring(argv[1]) != L"--dir")
     {
-        std::cout << "Incorrect arguments. \nUsage: <program> <original_midi_file> <benchmark_midi_file>\nUsage for directory mode: <program> --dir <directory_path>\n";
+        std::cout << "Incorrect arguments. \nUsage: <program> <original_midi_file>\nUsage for directory mode: <program> --dir <directory_path>\n";
         return 1;
     }
     
