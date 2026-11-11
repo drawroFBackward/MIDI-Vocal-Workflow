@@ -246,3 +246,13 @@ std::vector<FilePair> pairFiles(const juce::String& directoryPath)
 
     return filePairs;
 }
+
+void BenchmarkReport::addResult(const BenchmarkResult& result)
+{
+    results.push_back(result);
+}
+
+void BenchmarkReport::clearResults()
+{
+    results.clear();
+}
