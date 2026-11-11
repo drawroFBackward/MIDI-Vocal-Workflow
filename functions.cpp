@@ -248,6 +248,8 @@ std::vector<FilePair> pairFiles(const juce::String& directoryPath)
             std::cout << "Benchmark file not found for " << originalFileName << "\n";
         }
     }
+    if (filePairs.empty())
+        throw std::runtime_error("No benchmark files found for the original MIDI files in the directory");
     return filePairs;
 }
 

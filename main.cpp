@@ -34,7 +34,7 @@ int wmain(int argc, wchar_t* argv[])
         return 1;
     }
     
-    // training mode
+    // benchmark mode
     std::vector<FilePair> filePairs;
     try
     {

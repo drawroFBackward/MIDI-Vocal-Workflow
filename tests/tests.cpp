@@ -446,3 +446,80 @@ void evaluate_zeroResultTest::runTest() {
         expectEquals(result.f1, 0.0);
     });
 }
+
+void pairFiles_generalTest::runTest() {
+    testCase("Pair Files General Test", [&] {
+        juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("pairFilesTest");
+        tempDir.createDirectory();
+        juce::File originalFile = tempDir.getChildFile("Original_Test.mid");
+        juce::File benchmarkFile = tempDir.getChildFile("Modified_Test.mid");
+        originalFile.create();
+        benchmarkFile.create();
+        std::vector<FilePair> filePairs = pairFiles(tempDir.getFullPathName());
+        expectEquals(static_cast<int>(filePairs.size()), 1);
+        expectEquals(filePairs[0].original, originalFile.getFullPathName());
+        expectEquals(filePairs[0].benchmark, benchmarkFile.getFullPathName());
+        tempDir.deleteRecursively();
+    });
+}
+void pairFiles_noOriginalFilesTest::runTest() {
+    testCase("Pair Files No Original Files Test", [&] {
+        juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("pairFilesTestNoOriginal");
+        tempDir.createDirectory();
+        juce::File benchmarkFile = tempDir.getChildFile("Modified_Test.mid");
+        benchmarkFile.create();
+        bool A = false;
+        try {
+            std::vector<FilePair> filePairs = pairFiles(tempDir.getFullPathName());
+        } catch (...) {
+            A = true;
+        }
+        expect(A);
+        tempDir.deleteRecursively();
+    });
+}
+
+void pairFiles_noBenchmarkFilesTest::runTest() {
+    testCase("Pair Files No Benchmark Files Test", [&] {
+        juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("pairFilesTestNoBenchmark");
+        tempDir.createDirectory();
+        juce::File originalFile = tempDir.getChildFile("Original_Test.mid");
+        originalFile.create();
+        bool A = false;
+        try {
+            std::vector<FilePair> filePairs = pairFiles(tempDir.getFullPathName());
+        } catch (...) {
+            A = true;
+        }
+        expect(A);
+        tempDir.deleteRecursively();
+    });
+}
+
+void pairFiles_directoryDoesNotExistTest::runTest() {
+    testCase("Pair Files Directory Does Not Exist Test", [&] {
+        try {
+            std::vector<FilePair> filePairs = pairFiles("non_existent_directory");
+        } catch (...) {
+            expect(true);
+            return;
+        }
+        expect(false);
+    });
+}
+
+void pairFiles_unicodeFileNamesTest::runTest() {
+    testCase("Pair Files Unicode File Names Test", [&] {
+        juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("pairFilesTestUnicode");
+        tempDir.createDirectory();
+        juce::File originalFile = tempDir.getChildFile("Original_千本桜.mid");
+        juce::File benchmarkFile = tempDir.getChildFile("Modified_千本桜.mid");
+        originalFile.create();
+        benchmarkFile.create();
+        std::vector<FilePair> filePairs = pairFiles(tempDir.getFullPathName());
+        expectEquals(static_cast<int>(filePairs.size()), 1);
+        expectEquals(filePairs[0].original, tempDir.getFullPathName() + "/Original_千本桜.mid");
+        expectEquals(filePairs[0].benchmark, tempDir.getFullPathName() + "/Modified_千本桜.mid");
+        tempDir.deleteRecursively();
+    });
+}

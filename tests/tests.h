@@ -152,3 +152,40 @@ class evaluate_zeroResultTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+// pairFiles() test functions
+
+class pairFiles_generalTest : public juce::UnitTest{
+    public:
+        pairFiles_generalTest() : juce::UnitTest("Pair Files General Test") {}
+
+        void runTest() override;
+};
+
+class pairFiles_noOriginalFilesTest : public juce::UnitTest{
+    public:
+        pairFiles_noOriginalFilesTest() : juce::UnitTest("Pair Files No Original Files Test") {}
+
+        void runTest() override;
+};
+
+class pairFiles_noBenchmarkFilesTest : public juce::UnitTest{
+    public:
+        pairFiles_noBenchmarkFilesTest() : juce::UnitTest("Pair Files No Benchmark Files Test") {}
+
+        void runTest() override;
+};
+
+class pairFiles_directoryDoesNotExistTest : public juce::UnitTest{
+    public:
+        pairFiles_directoryDoesNotExistTest() : juce::UnitTest("Pair Files Directory Does Not Exist Test") {}
+
+        void runTest() override;
+};
+
+class pairFiles_unicodeFileNamesTest : public juce::UnitTest{
+    public:
+        pairFiles_unicodeFileNamesTest() : juce::UnitTest("Pair Files Unicode File Names Test") {}
+
+        void runTest() override;
+};
