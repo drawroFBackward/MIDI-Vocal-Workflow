@@ -9,12 +9,12 @@
 #include "melody.h"
 
 struct FilePair{
-    std::string original;
-    std::string benchmark;
+    juce::String original;
+    juce::String benchmark;
 };
 
 struct BenchmarkResult{
-    std::string songName; // Song name
+    juce::String songName; // Song name
     int TP; // True Positives
     int FP; // False Positives
     int FN; // False Negatives
@@ -24,9 +24,9 @@ struct BenchmarkResult{
     BenchmarkResult(): songName(""), TP(0), FP(0), FN(0), precision(0), recall(0), f1(0) {}
 };
 
-BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName = "");
+BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const juce::String& songName = "");
 
-BenchmarkResult runBenchmark(const std::string& originalMidiFilePath, const std::string& benchmarkMidiFilePath);
+BenchmarkResult runBenchmark(const juce::String& originalMidiFilePath, const juce::String& benchmarkMidiFilePath);
 
 struct BenchmarkReport{
     std::vector<BenchmarkResult> results;
@@ -34,9 +34,9 @@ struct BenchmarkReport{
     void clearResults();
 };
 
-juce::File filePath(std::string path);
+juce::File filePath(const juce::String& path);
 
-juce::MidiFile readMidiFile(const std::string& path);
+juce::MidiFile readMidiFile(const juce::String& path);
 
 std::vector<Note> extractNotes(const juce::MidiFile& midiFile);
 
@@ -54,10 +54,10 @@ int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<
 
 juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, const juce::MidiFile& reference);
 
-void exportMidiFile(const juce::MidiFile& midiFile, const std::string& path);
+void exportMidiFile(const juce::MidiFile& midiFile, const juce::String& path);
 
-void runAndExport(const std::string& originalMidiFilePath);
+void runAndExport(const juce::String& originalMidiFilePath);
 
-std::vector<std::string> findOriginalMidiFiles(const std::string& directoryPath);
+std::vector<juce::String> findOriginalMidiFiles(const juce::String& directoryPath);
 
-std::vector<FilePair> pairFiles(const std::string& directoryPath);
+std::vector<FilePair> pairFiles(const juce::String& directoryPath);

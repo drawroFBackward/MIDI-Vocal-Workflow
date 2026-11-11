@@ -1,6 +1,6 @@
 #include "functions.h"
 
-juce::File filePath(std::string path)
+juce::File filePath(const juce::String& path)
 {
     juce::File midiPath(path);
     if (!midiPath.existsAsFile())
@@ -10,7 +10,7 @@ juce::File filePath(std::string path)
     return midiPath;
 }
 
-juce::MidiFile readMidiFile(const std::string& path)
+juce::MidiFile readMidiFile(const juce::String& path)
 {
     juce::FileInputStream input(filePath(path));
     if (!input.openedOk())
@@ -149,7 +149,7 @@ juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, const juce::MidiF
     return midiFile;
 }
 
-void exportMidiFile(const juce::MidiFile& midiFile, const std::string& path)
+void exportMidiFile(const juce::MidiFile& midiFile, const juce::String& path)
 {
     juce::File file(path);
     juce::FileOutputStream outputStream(file);
@@ -161,7 +161,7 @@ void exportMidiFile(const juce::MidiFile& midiFile, const std::string& path)
         throw std::runtime_error("Failed to write MIDI file");
 }
 
-BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName)
+BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const juce::String& songName)
 {
     int tp = truePositiveNotes(originalNotes, benchmarkNotes, indices);
     int fp = static_cast<int>(indices.size()) - tp;
@@ -182,7 +182,7 @@ BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vect
     return result;
 }
 
-BenchmarkResult runBenchmark(const std::string& originalMidiFilePath, const std::string& benchmarkMidiFilePath)
+BenchmarkResult runBenchmark(const juce::String& originalMidiFilePath, const juce::String& benchmarkMidiFilePath)
 {
     juce::MidiFile originalMidiFile = readMidiFile(originalMidiFilePath);
     juce::MidiFile benchmarkMidiFile = readMidiFile(benchmarkMidiFilePath);
@@ -195,21 +195,21 @@ BenchmarkResult runBenchmark(const std::string& originalMidiFilePath, const std:
     return evaluate(originalNotes, benchmarkNotes, selectedIndices, originalMidiFilePath);
 }
 
-void runAndExport(const std::string& originalMidiFilePath)
+void runAndExport(const juce::String& originalMidiFilePath)
 {
     juce::MidiFile originalMidiFile = readMidiFile(originalMidiFilePath);
     std::vector<Note> originalNotes = extractNotes(originalMidiFile);
     auto selectedNotes = indicesToNotes(originalNotes, selectNotes(originalNotes));
     juce::MidiFile outputMidiFile = notesToMidiFile(selectedNotes, originalMidiFile);
-    std::string outputMidiFilePath = "Vocal_";
-    //outputMidiFilePath += originalMidiFilePath; - need to figure out how to extract just the file name without the path
+    juce::String outputMidiFilePath = "Vocal_";
+    outputMidiFilePath += juce::File(originalMidiFilePath).getFileName();
     outputMidiFilePath += ".mid";
     exportMidiFile(outputMidiFile, outputMidiFilePath);
 }
 
-std::vector<std::string> findOriginalMidiFiles(const std::string& directoryPath)
+std::vector<juce::String> findOriginalMidiFiles(const juce::String& directoryPath)
 {
-    std::vector<std::string> originalFiles;
+    std::vector<juce::String> originalFiles;
     juce::File directory(directoryPath);
     if (!directory.isDirectory())
         return originalFiles;
@@ -219,27 +219,27 @@ std::vector<std::string> findOriginalMidiFiles(const std::string& directoryPath)
     {
         if (file.getFileName().startsWith("Original_"))
         {
-            originalFiles.push_back(file.getFullPathName().toStdString());
+            originalFiles.push_back(file.getFullPathName());
         }
     }
     return originalFiles;
 }
 
-std::vector<FilePair> pairFiles(const std::string& directoryPath)
+std::vector<FilePair> pairFiles(const juce::String& directoryPath)
 {
     std::vector<FilePair> filePairs;
-    std::vector<std::string> originalFiles = findOriginalMidiFiles(directoryPath);
+    std::vector<juce::String> originalFiles = findOriginalMidiFiles(directoryPath);
     for (const auto& originalFile : originalFiles)
     {
         juce::String originalFileName = juce::File(originalFile).getFileName();
         
-        std::string benchmarkFileName = "Modified_" + originalFileName.toStdString().substr(std::string("Original_").length());
+        juce::String benchmarkFileName = "Modified_" + originalFileName.substring(juce::String("Original_").length());
         juce::File benchmarkFile(directoryPath + "/" + benchmarkFileName);
         if (benchmarkFile.existsAsFile())
         {
             FilePair pair;
             pair.original = originalFile;
-            pair.benchmark = benchmarkFile.getFullPathName().toStdString();
+            pair.benchmark = benchmarkFile.getFullPathName();
             filePairs.push_back(pair);
         }
     }

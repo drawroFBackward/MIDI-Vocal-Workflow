@@ -22,14 +22,23 @@ int wmain(int argc, wchar_t* argv[])
     
     if (std::wstring(argv[1]) == L"--benchmark-dir")
     {
-        //
+        std::vector<FilePair> filePairs;
+        try
+        {
+            filePairs = pairFiles(juce::String(argv[2]));
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << e.what() << "\n";
+            return 1;
+        }
     }
 
     // Step 2: Read the MIDI file, extract notes, and handle exceptions
     juce::MidiFile originalMidiFile, benchmarkMidiFile;
     std::vector<Note> notes, correctNotes;
-    std::string originalMidiFilePath = juce::String(argv[1]).toStdString();
-    std::string benchmarkMidiFilePath = juce::String(argv[2]).toStdString();
+    juce::String originalMidiFilePath = juce::String(argv[1]);
+    juce::String benchmarkMidiFilePath = juce::String(argv[2]);
 
     std::cout << "Original MIDI File: " << originalMidiFilePath << "\n";
     std::cout << "Benchmark MIDI File: " << benchmarkMidiFilePath << "\n";
