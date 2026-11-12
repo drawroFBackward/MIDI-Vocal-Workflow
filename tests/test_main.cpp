@@ -38,6 +38,8 @@ int main() {
     benchmarkMicroAverageTest Z;
     benchmarkMacroAverageTest AA;
     benchmarkPrintReportTest AB;
+    // runBenchmark PPQ compatibility tests
+    runBenchmarkPPQTest AC;
 
     // run all tests
     juce::UnitTestRunner runner;
