@@ -34,6 +34,10 @@ int main() {
     pairFiles_noBenchmarkFilesTest W;
     pairFiles_directoryDoesNotExistTest X;
     pairFiles_unicodeFileNamesTest Y;
+    // BenchmarkReport tests
+    benchmarkMicroAverageTest Z;
+    benchmarkMacroAverageTest AA;
+    benchmarkPrintReportTest AB;
 
     // run all tests
     juce::UnitTestRunner runner;
