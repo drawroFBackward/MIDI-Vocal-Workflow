@@ -1,4 +1,57 @@
 #include "tests.h"
+#include <sstream>
+
+namespace
+{
+    // Two hand-checkable songs:
+    // A: TP=1, FP=1, FN=0 -> P=1/2, R=1, F1=2/3
+    // B: TP=9, FP=0, FN=1 -> P=1, R=9/10, F1=18/19
+    BenchmarkReport makeSampleBenchmarkReport()
+    {
+        BenchmarkReport report;
+
+        BenchmarkResult songA;
+        songA.songName = "Song A";
+        songA.TP = 1;
+        songA.FP = 1;
+        songA.FN = 0;
+        songA.precision = 0.5;
+        songA.recall = 1.0;
+        songA.f1 = 2.0 / 3.0;
+        report.addResult(songA);
+
+        BenchmarkResult songB;
+        songB.songName = "Song B";
+        songB.TP = 9;
+        songB.FP = 0;
+        songB.FN = 1;
+        songB.precision = 1.0;
+        songB.recall = 0.9;
+        songB.f1 = 18.0 / 19.0;
+        report.addResult(songB);
+
+        return report;
+    }
+
+    // Restore std::cout even if a test throws. Capturing only the report
+    // makes the output assertions independent of the JUCE test runner.
+    class ScopedCoutCapture
+    {
+    public:
+        ScopedCoutCapture() : previousBuffer(std::cout.rdbuf(captured.rdbuf())) {}
+        ~ScopedCoutCapture() { std::cout.rdbuf(previousBuffer); }
+
+        ScopedCoutCapture(const ScopedCoutCapture&) = delete;
+        ScopedCoutCapture& operator=(const ScopedCoutCapture&) = delete;
+
+        std::string str() const { return captured.str(); }
+
+    private:
+        std::ostringstream captured;
+        std::streambuf* previousBuffer;
+    };
+}
+
 
 std::vector<Note> testExtractNotes(const juce::MidiMessageSequence& sequence) {
     juce::MidiFile midiFile;
@@ -535,5 +588,119 @@ void pairFiles_unicodeFileNamesTest::runTest() {
         expectEquals(filePairs[0].original, originalFile.getFullPathName());
         expectEquals(filePairs[0].benchmark, benchmarkFile.getFullPathName());
         tempDir.deleteRecursively();
+    });
+}
+
+void benchmarkMicroAverageTest::runTest()
+{
+    testCase("Micro average combines counts across songs", [&] {
+        const auto report = makeSampleBenchmarkReport();
+        const auto micro = report.getMicroAverageResult();
+
+        // Combined counts: TP=10, FP=1, FN=1.
+        // Micro precision, recall, and F1 are all 10/11.
+        expectEquals(micro.TP, 10);
+        expectEquals(micro.FP, 1);
+        expectEquals(micro.FN, 1);
+        expectWithinAbsoluteError(micro.precision, 10.0 / 11.0, 1.0e-12);
+        expectWithinAbsoluteError(micro.recall, 10.0 / 11.0, 1.0e-12);
+        expectWithinAbsoluteError(micro.f1, 10.0 / 11.0, 1.0e-12);
+
+        // Aggregation must not overwrite the stored per-song counts.
+        expectEquals(report.results[0].TP, 1);
+        expectEquals(report.results[1].TP, 9);
+    });
+
+    testCase("Micro average handles zero counts without division errors", [&] {
+        BenchmarkReport report;
+        report.addResult(BenchmarkResult{});
+
+        const auto micro = report.getMicroAverageResult();
+        expectEquals(micro.TP, 0);
+        expectEquals(micro.FP, 0);
+        expectEquals(micro.FN, 0);
+        expectEquals(micro.precision, 0.0);
+        expectEquals(micro.recall, 0.0);
+        expectEquals(micro.f1, 0.0);
+    });
+
+    testCase("Micro average rejects an empty report", [&] {
+        const BenchmarkReport report;
+        expectThrowsType(report.getMicroAverageResult(), std::runtime_error);
+    });
+}
+
+void benchmarkMacroAverageTest::runTest()
+{
+    testCase("Macro average gives each song equal weight", [&] {
+        const auto report = makeSampleBenchmarkReport();
+        const auto macro = report.getMacroAverageResult();
+
+        // Mean P=(1/2 + 1)/2 = 3/4.
+        // Mean R=(1 + 9/10)/2 = 19/20.
+        // Mean F1=(2/3 + 18/19)/2 = 46/57.
+        // Macro F1 must NOT be recomputed from macro P and macro R.
+        expectWithinAbsoluteError(macro.precision, 3.0 / 4.0, 1.0e-12);
+        expectWithinAbsoluteError(macro.recall, 19.0 / 20.0, 1.0e-12);
+        expectWithinAbsoluteError(macro.f1, 46.0 / 57.0, 1.0e-12);
+
+        // Reading aggregate metrics must not change individual results.
+        expectEquals(static_cast<int>(report.results.size()), 2);
+        expectEquals(report.results[0].FP, 1);
+        expectEquals(report.results[1].FN, 1);
+        expectWithinAbsoluteError(report.results[0].f1, 2.0 / 3.0, 1.0e-12);
+    });
+
+    testCase("Macro average handles zero-valued metrics", [&] {
+        BenchmarkReport report;
+        report.addResult(BenchmarkResult{});
+
+        const auto macro = report.getMacroAverageResult();
+        expectEquals(macro.precision, 0.0);
+        expectEquals(macro.recall, 0.0);
+        expectEquals(macro.f1, 0.0);
+    });
+
+    testCase("Macro average rejects an empty report", [&] {
+        const BenchmarkReport report;
+        expectThrowsType(report.getMacroAverageResult(), std::runtime_error);
+    });
+}
+
+void benchmarkPrintReportTest::runTest()
+{
+    testCase("Print report includes songs, counts, and both aggregate summaries", [&] {
+        const auto report = makeSampleBenchmarkReport();
+        std::string output;
+
+        {
+            ScopedCoutCapture capture;
+            report.printReport();
+            output = capture.str();
+        }
+
+        expect(output.find("Song: Song A") != std::string::npos);
+        expect(output.find("TP: 1, FP: 1, FN: 0") != std::string::npos);
+        expect(output.find("Song: Song B") != std::string::npos);
+        expect(output.find("TP: 9, FP: 0, FN: 1") != std::string::npos);
+        expect(output.find("Micro Average - Precision:") != std::string::npos);
+        expect(output.find("Macro Average - Precision:") != std::string::npos);
+        expect(output.find("Micro Average - Precision:") > output.find("Song: Song B"));
+        expect(output.find("Macro Average - Precision:") > output.find("Micro Average - Precision:"));
+    });
+
+    testCase("Print report handles an empty result collection", [&] {
+        const BenchmarkReport report;
+        std::string output;
+
+        {
+            ScopedCoutCapture capture;
+            report.printReport();
+            output = capture.str();
+        }
+
+        expect(output == "No benchmark results available.\n");
+        expect(output.find("Micro Average") == std::string::npos);
+        expect(output.find("Macro Average") == std::string::npos);
     });
 }
