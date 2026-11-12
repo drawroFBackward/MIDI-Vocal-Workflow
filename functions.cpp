@@ -186,6 +186,8 @@ BenchmarkResult runBenchmark(const juce::String& originalMidiFilePath, const juc
 {
     juce::MidiFile originalMidiFile = readMidiFile(originalMidiFilePath);
     juce::MidiFile benchmarkMidiFile = readMidiFile(benchmarkMidiFilePath);
+    if (originalMidiFile.getTimeFormat() != benchmarkMidiFile.getTimeFormat())
+        throw std::runtime_error(("MIDI files: " + originalMidiFilePath + " and " + benchmarkMidiFilePath + " have different PPQ (time format)").toStdString());
 
     std::vector<Note> originalNotes = extractNotes(originalMidiFile);
     std::vector<Note> benchmarkNotes = extractNotes(benchmarkMidiFile);
