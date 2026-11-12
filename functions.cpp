@@ -262,3 +262,58 @@ void BenchmarkReport::clearResults()
 {
     results.clear();
 }
+
+BenchmarkResult BenchmarkReport::getMicroAverageResult() const
+{
+    if (results.empty())
+        throw std::runtime_error("No benchmark results available for micro average calculation");
+    BenchmarkResult microAverage;
+    for (const auto& result : results)
+    {
+        microAverage.TP += result.TP;
+        microAverage.FP += result.FP;
+        microAverage.FN += result.FN;
+    }
+    microAverage.precision = (microAverage.TP + microAverage.FP) > 0 ? static_cast<double>(microAverage.TP) / (microAverage.TP + microAverage.FP) : 0;
+    microAverage.recall = (microAverage.TP + microAverage.FN) > 0 ? static_cast<double>(microAverage.TP) / (microAverage.TP + microAverage.FN) : 0;
+    microAverage.f1 = (microAverage.precision + microAverage.recall) > 0 ? 2 * (microAverage.precision * microAverage.recall) / (microAverage.precision + microAverage.recall) : 0;
+    return microAverage;
+}
+
+BenchmarkResult BenchmarkReport::getMacroAverageResult() const
+{
+    BenchmarkResult macroAverage;
+    if (results.empty())
+        throw std::runtime_error("No benchmark results available for macro average calculation");
+
+    for (const auto& result : results)
+    {
+        macroAverage.precision += result.precision;
+        macroAverage.recall += result.recall;
+        macroAverage.f1 += result.f1;
+    }
+    macroAverage.precision /= results.size();
+    macroAverage.recall /= results.size();
+    macroAverage.f1 /= results.size();
+    return macroAverage;
+}
+
+void BenchmarkReport::printReport() const
+{
+    if (results.empty())
+    {
+        std::cout << "No benchmark results available.\n";
+        return;
+    }
+    for (const auto& result : results)
+    {
+        std::cout << "Song: " << result.songName << "\n";
+        std::cout << "TP: " << result.TP << ", FP: " << result.FP << ", FN: " << result.FN << "\n";
+        std::cout << "Precision: " << result.precision << ", Recall: " << result.recall << ", F1: " << result.f1 << "\n";
+        std::cout << "--------------------------\n";
+    }
+    BenchmarkResult microAverage = getMicroAverageResult();
+    BenchmarkResult macroAverage = getMacroAverageResult();
+    std::cout << "Micro Average - Precision: " << microAverage.precision << ", Recall: " << microAverage.recall << ", F1: " << microAverage.f1 << "\n";
+    std::cout << "Macro Average - Precision: " << macroAverage.precision << ", Recall: " << macroAverage.recall << ", F1: " << macroAverage.f1 << "\n";
+}

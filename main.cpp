@@ -47,17 +47,7 @@ int wmain(int argc, wchar_t* argv[])
             BenchmarkResult result = runBenchmark(originalMidiFilePath, benchmarkMidiFilePath);
             report.addResult(result);
         }
-        // Optionally, you can print the report here
-        for (const auto& result : report.results)
-        {
-            std::cout << "Benchmark Result for " << result.songName << ":\n";
-            std::cout << "True Positives: " << result.TP << "\n";
-            std::cout << "False Positives: " << result.FP << "\n";
-            std::cout << "False Negatives: " << result.FN << "\n";
-            std::cout << "Precision: " << result.precision << "\n";
-            std::cout << "Recall: " << result.recall << "\n";
-            std::cout << "F1 Score: " << result.f1 << "\n";
-        }
+        report.printReport();
     }
     catch (const std::exception& e)
     {

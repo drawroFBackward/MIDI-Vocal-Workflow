@@ -32,6 +32,9 @@ struct BenchmarkReport{
     std::vector<BenchmarkResult> results;
     void addResult(const BenchmarkResult& result);
     void clearResults();
+    BenchmarkResult getMicroAverageResult() const;
+    BenchmarkResult getMacroAverageResult() const;
+    void printReport() const;
 };
 
 juce::File filePath(const juce::String& path);
