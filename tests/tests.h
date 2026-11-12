@@ -189,3 +189,25 @@ class pairFiles_unicodeFileNamesTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+// BenchmarkReport aggregate and output tests
+class benchmarkMicroAverageTest : public juce::UnitTest
+{
+public:
+    benchmarkMicroAverageTest() : juce::UnitTest("Benchmark Micro Average Test") {}
+    void runTest() override;
+};
+
+class benchmarkMacroAverageTest : public juce::UnitTest
+{
+public:
+    benchmarkMacroAverageTest() : juce::UnitTest("Benchmark Macro Average Test") {}
+    void runTest() override;
+};
+
+class benchmarkPrintReportTest : public juce::UnitTest
+{
+public:
+    benchmarkPrintReportTest() : juce::UnitTest("Benchmark Print Report Test") {}
+    void runTest() override;
+};
