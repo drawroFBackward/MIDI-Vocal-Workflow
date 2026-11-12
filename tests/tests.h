@@ -211,3 +211,12 @@ public:
     benchmarkPrintReportTest() : juce::UnitTest("Benchmark Print Report Test") {}
     void runTest() override;
 };
+
+
+// runBenchmark() integration: matching PPQ and mismatch rejection
+class runBenchmarkPPQTest : public juce::UnitTest
+{
+public:
+    runBenchmarkPPQTest() : juce::UnitTest("Run Benchmark PPQ Test") {}
+    void runTest() override;
+};
