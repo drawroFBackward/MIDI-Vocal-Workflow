@@ -25,6 +25,21 @@ int main() {
     metadataPreservationTest Q;
     // exportMidiFile tests
     outputMatchedInputTest R;
+    // evaluate tests
+    evaluate_knownResultTest S;
+    evaluate_zeroResultTest T;
+    // pairFiles tests
+    pairFiles_generalTest U;
+    pairFiles_noOriginalFilesTest V;
+    pairFiles_noBenchmarkFilesTest W;
+    pairFiles_directoryDoesNotExistTest X;
+    pairFiles_unicodeFileNamesTest Y;
+    // BenchmarkReport tests
+    benchmarkMicroAverageTest Z;
+    benchmarkMacroAverageTest AA;
+    benchmarkPrintReportTest AB;
+    // runBenchmark PPQ compatibility tests
+    runBenchmarkPPQTest AC;
 
     // run all tests
     juce::UnitTestRunner runner;

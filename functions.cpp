@@ -1,6 +1,6 @@
 #include "functions.h"
 
-juce::File filePath(std::string path)
+juce::File filePath(const juce::String& path)
 {
     juce::File midiPath(path);
     if (!midiPath.existsAsFile())
@@ -10,7 +10,7 @@ juce::File filePath(std::string path)
     return midiPath;
 }
 
-juce::MidiFile readMidiFile(const std::string& path)
+juce::MidiFile readMidiFile(const juce::String& path)
 {
     juce::FileInputStream input(filePath(path));
     if (!input.openedOk())
@@ -81,6 +81,13 @@ std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPi
     return selectedIndices;
 }
 
+std::vector<std::size_t> selectNotes(const std::vector<Note>& notes)
+{
+    std::vector<std::size_t> selectedIndices = selectByPitch(notes, 60);
+    // Add more selection in future
+    return selectedIndices;
+}
+
 std::vector<Note> indicesToNotes(const std::vector<Note>& notes, const std::vector<std::size_t>& indices)
 {
     std::vector<Note> selectedNotes;
@@ -142,7 +149,7 @@ juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, const juce::MidiF
     return midiFile;
 }
 
-void exportMidiFile(const juce::MidiFile& midiFile, const std::string& path)
+void exportMidiFile(const juce::MidiFile& midiFile, const juce::String& path)
 {
     juce::File file(path);
     juce::FileOutputStream outputStream(file);
@@ -154,32 +161,161 @@ void exportMidiFile(const juce::MidiFile& midiFile, const std::string& path)
         throw std::runtime_error("Failed to write MIDI file");
 }
 
-void BenchmarkResults::evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const std::string& songName)
+BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const juce::String& songName)
 {
     int tp = truePositiveNotes(originalNotes, benchmarkNotes, indices);
     int fp = static_cast<int>(indices.size()) - tp;
     int fn = static_cast<int>(benchmarkNotes.size()) - tp;
 
-    double precision = (tp + fp > 0) ? static_cast<double>(tp) / (tp + fp) : throw std::runtime_error("Precision undefined due to zero division");
-    double recall = (tp + fn > 0) ? static_cast<double>(tp) / (tp + fn) : throw std::runtime_error("Recall undefined due to zero division");
-    double f1 = (precision + recall > 0) ? 2.0 * (precision * recall) / (precision + recall) : throw std::runtime_error("F1 score undefined due to zero division");
+    double p = (tp + fp > 0) ? static_cast<double>(tp) / (tp + fp) : 0;
+    double r = (tp + fn > 0) ? static_cast<double>(tp) / (tp + fn) : 0;
+    double f = (p + r > 0) ? 2.0 * (p * r) / (p + r) : 0;
 
-    songNames.push_back(songName);
-    TP.push_back(tp);
-    FP.push_back(fp);
-    FN.push_back(fn);
-    this->precision.push_back(precision);
-    this->recall.push_back(recall);
-    f1Score.push_back(f1);
+    BenchmarkResult result;
+    result.songName = songName;
+    result.TP = tp;
+    result.FP = fp;
+    result.FN = fn;
+    result.precision = p;
+    result.recall = r;
+    result.f1 = f;
+    return result;
 }
 
-void BenchmarkResults::printResults()
+BenchmarkResult runBenchmark(const juce::String& originalMidiFilePath, const juce::String& benchmarkMidiFilePath)
 {
-    for (std::size_t i = 0; i < songNames.size(); ++i)
+    juce::MidiFile originalMidiFile = readMidiFile(originalMidiFilePath);
+    juce::MidiFile benchmarkMidiFile = readMidiFile(benchmarkMidiFilePath);
+    if (originalMidiFile.getTimeFormat() != benchmarkMidiFile.getTimeFormat())
+        throw std::runtime_error(("MIDI files: " + originalMidiFilePath + " and " + benchmarkMidiFilePath + " have different PPQ (time format)").toStdString());
+
+    std::vector<Note> originalNotes = extractNotes(originalMidiFile);
+    std::vector<Note> benchmarkNotes = extractNotes(benchmarkMidiFile);
+
+    std::vector<std::size_t> selectedIndices = selectNotes(originalNotes);
+
+    return evaluate(originalNotes, benchmarkNotes, selectedIndices, originalMidiFilePath);
+}
+
+void runAndExport(const juce::String& originalMidiFilePath)
+{
+    juce::MidiFile originalMidiFile = readMidiFile(originalMidiFilePath);
+    std::vector<Note> originalNotes = extractNotes(originalMidiFile);
+    auto selectedNotes = indicesToNotes(originalNotes, selectNotes(originalNotes));
+    juce::MidiFile outputMidiFile = notesToMidiFile(selectedNotes, originalMidiFile);
+    juce::String outputMidiFilePath = "Vocal_";
+    outputMidiFilePath += juce::File(originalMidiFilePath).getFileName();
+    exportMidiFile(outputMidiFile, outputMidiFilePath);
+}
+
+std::vector<juce::String> findOriginalMidiFiles(const juce::String& directoryPath)
+{
+    std::vector<juce::String> originalFiles;
+    juce::File directory(directoryPath);
+    if (!directory.isDirectory())
+        throw std::runtime_error("Directory does not exist");
+    // File is an original MIDI file if it has the .mid extension and it has Original_ as a prefix in the file name
+    juce::Array<juce::File> files = directory.findChildFiles(juce::File::findFiles, false, "*.mid");
+    for (auto& file : files)
     {
-        std::cout << "Song: " << songNames[i] << "\n";
-        std::cout << "TP: " << TP[i] << ", FP: " << FP[i] << ", FN: " << FN[i] << "\n";
-        std::cout << "Precision: " << precision[i] << ", Recall: " << recall[i] << ", F1 Score: " << f1Score[i] << "\n";
+        if (file.getFileName().startsWith("Original_"))
+        {
+            originalFiles.push_back(file.getFullPathName());
+        }
+    }
+    if (originalFiles.empty())
+        throw std::runtime_error("No original MIDI files found in the directory");
+    return originalFiles;
+}
+
+std::vector<FilePair> pairFiles(const juce::String& directoryPath)
+{
+    std::vector<FilePair> filePairs;
+    std::vector<juce::String> originalFiles = findOriginalMidiFiles(directoryPath);
+    for (const auto& originalFile : originalFiles)
+    {
+        juce::String originalFileName = juce::File(originalFile).getFileName();
+        
+        juce::String benchmarkFileName = "Modified_" + originalFileName.substring(juce::String("Original_").length());
+        juce::File benchmarkFile(directoryPath + "/" + benchmarkFileName);
+        if (benchmarkFile.existsAsFile())
+        {
+            FilePair pair;
+            pair.original = originalFile;
+            pair.benchmark = benchmarkFile.getFullPathName();
+            filePairs.push_back(pair);
+        }
+        else
+        {
+            std::cout << "Benchmark file not found for " << originalFileName << "\n";
+        }
+    }
+    if (filePairs.empty())
+        throw std::runtime_error("No benchmark files found for the original MIDI files in the directory");
+    return filePairs;
+}
+
+void BenchmarkReport::addResult(const BenchmarkResult& result)
+{
+    results.push_back(result);
+}
+
+void BenchmarkReport::clearResults()
+{
+    results.clear();
+}
+
+BenchmarkResult BenchmarkReport::getMicroAverageResult() const
+{
+    if (results.empty())
+        throw std::runtime_error("No benchmark results available for micro average calculation");
+    BenchmarkResult microAverage;
+    for (const auto& result : results)
+    {
+        microAverage.TP += result.TP;
+        microAverage.FP += result.FP;
+        microAverage.FN += result.FN;
+    }
+    microAverage.precision = (microAverage.TP + microAverage.FP) > 0 ? static_cast<double>(microAverage.TP) / (microAverage.TP + microAverage.FP) : 0;
+    microAverage.recall = (microAverage.TP + microAverage.FN) > 0 ? static_cast<double>(microAverage.TP) / (microAverage.TP + microAverage.FN) : 0;
+    microAverage.f1 = (microAverage.precision + microAverage.recall) > 0 ? 2 * (microAverage.precision * microAverage.recall) / (microAverage.precision + microAverage.recall) : 0;
+    return microAverage;
+}
+
+BenchmarkResult BenchmarkReport::getMacroAverageResult() const
+{
+    BenchmarkResult macroAverage;
+    if (results.empty())
+        throw std::runtime_error("No benchmark results available for macro average calculation");
+
+    for (const auto& result : results)
+    {
+        macroAverage.precision += result.precision;
+        macroAverage.recall += result.recall;
+        macroAverage.f1 += result.f1;
+    }
+    macroAverage.precision /= results.size();
+    macroAverage.recall /= results.size();
+    macroAverage.f1 /= results.size();
+    return macroAverage;
+}
+
+void BenchmarkReport::printReport() const
+{
+    if (results.empty())
+    {
+        std::cout << "No benchmark results available.\n";
+        return;
+    }
+    for (const auto& result : results)
+    {
+        std::cout << "Song: " << result.songName << "\n";
+        std::cout << "TP: " << result.TP << ", FP: " << result.FP << ", FN: " << result.FN << "\n";
+        std::cout << "Precision: " << result.precision << ", Recall: " << result.recall << ", F1: " << result.f1 << "\n";
         std::cout << "--------------------------\n";
     }
+    BenchmarkResult microAverage = getMicroAverageResult();
+    BenchmarkResult macroAverage = getMacroAverageResult();
+    std::cout << "Micro Average - Precision: " << microAverage.precision << ", Recall: " << microAverage.recall << ", F1: " << microAverage.f1 << "\n";
+    std::cout << "Macro Average - Precision: " << macroAverage.precision << ", Recall: " << macroAverage.recall << ", F1: " << macroAverage.f1 << "\n";
 }

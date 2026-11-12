@@ -137,3 +137,86 @@ class outputMatchedInputTest : public juce::UnitTest{
 
         void runTest() override;
 };
+
+// evaluate() test functions
+class evaluate_knownResultTest : public juce::UnitTest{
+    public:
+        evaluate_knownResultTest() : juce::UnitTest("Evaluate Known Result Test") {}
+
+        void runTest() override;
+};
+
+class evaluate_zeroResultTest : public juce::UnitTest{
+    public:
+        evaluate_zeroResultTest() : juce::UnitTest("Evaluate Zero Result Test") {}
+
+        void runTest() override;
+};
+
+// pairFiles() test functions
+
+class pairFiles_generalTest : public juce::UnitTest{
+    public:
+        pairFiles_generalTest() : juce::UnitTest("Pair Files General Test") {}
+
+        void runTest() override;
+};
+
+class pairFiles_noOriginalFilesTest : public juce::UnitTest{
+    public:
+        pairFiles_noOriginalFilesTest() : juce::UnitTest("Pair Files No Original Files Test") {}
+
+        void runTest() override;
+};
+
+class pairFiles_noBenchmarkFilesTest : public juce::UnitTest{
+    public:
+        pairFiles_noBenchmarkFilesTest() : juce::UnitTest("Pair Files No Benchmark Files Test") {}
+
+        void runTest() override;
+};
+
+class pairFiles_directoryDoesNotExistTest : public juce::UnitTest{
+    public:
+        pairFiles_directoryDoesNotExistTest() : juce::UnitTest("Pair Files Directory Does Not Exist Test") {}
+
+        void runTest() override;
+};
+
+class pairFiles_unicodeFileNamesTest : public juce::UnitTest{
+    public:
+        pairFiles_unicodeFileNamesTest() : juce::UnitTest("Pair Files Unicode File Names Test") {}
+
+        void runTest() override;
+};
+
+// BenchmarkReport aggregate and output tests
+class benchmarkMicroAverageTest : public juce::UnitTest
+{
+public:
+    benchmarkMicroAverageTest() : juce::UnitTest("Benchmark Micro Average Test") {}
+    void runTest() override;
+};
+
+class benchmarkMacroAverageTest : public juce::UnitTest
+{
+public:
+    benchmarkMacroAverageTest() : juce::UnitTest("Benchmark Macro Average Test") {}
+    void runTest() override;
+};
+
+class benchmarkPrintReportTest : public juce::UnitTest
+{
+public:
+    benchmarkPrintReportTest() : juce::UnitTest("Benchmark Print Report Test") {}
+    void runTest() override;
+};
+
+
+// runBenchmark() integration: matching PPQ and mismatch rejection
+class runBenchmarkPPQTest : public juce::UnitTest
+{
+public:
+    runBenchmarkPPQTest() : juce::UnitTest("Run Benchmark PPQ Test") {}
+    void runTest() override;
+};

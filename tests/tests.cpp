@@ -1,4 +1,98 @@
 #include "tests.h"
+#include <sstream>
+
+namespace
+{
+    // Two hand-checkable songs:
+    // A: TP=1, FP=1, FN=0 -> P=1/2, R=1, F1=2/3
+    // B: TP=9, FP=0, FN=1 -> P=1, R=9/10, F1=18/19
+    BenchmarkReport makeSampleBenchmarkReport()
+    {
+        BenchmarkReport report;
+
+        BenchmarkResult songA;
+        songA.songName = "Song A";
+        songA.TP = 1;
+        songA.FP = 1;
+        songA.FN = 0;
+        songA.precision = 0.5;
+        songA.recall = 1.0;
+        songA.f1 = 2.0 / 3.0;
+        report.addResult(songA);
+
+        BenchmarkResult songB;
+        songB.songName = "Song B";
+        songB.TP = 9;
+        songB.FP = 0;
+        songB.FN = 1;
+        songB.precision = 1.0;
+        songB.recall = 0.9;
+        songB.f1 = 18.0 / 19.0;
+        report.addResult(songB);
+
+        return report;
+    }
+
+    // Restore std::cout even if a test throws. Capturing only the report
+    // makes the output assertions independent of the JUCE test runner.
+    class ScopedCoutCapture
+    {
+    public:
+        ScopedCoutCapture() : previousBuffer(std::cout.rdbuf(captured.rdbuf())) {}
+        ~ScopedCoutCapture() { std::cout.rdbuf(previousBuffer); }
+
+        ScopedCoutCapture(const ScopedCoutCapture&) = delete;
+        ScopedCoutCapture& operator=(const ScopedCoutCapture&) = delete;
+
+        std::string str() const { return captured.str(); }
+
+    private:
+        std::ostringstream captured;
+        std::streambuf* previousBuffer;
+    };
+}
+
+
+// Build a real, minimal MIDI file so runBenchmark() exercises file reading
+// and its PPQ guard, rather than just comparing two in-memory values.
+namespace
+{
+    class ScopedBenchmarkTestDirectory
+    {
+    public:
+        ScopedBenchmarkTestDirectory()
+            : directory(juce::File::getSpecialLocation(juce::File::tempDirectory)
+                            .getNonexistentChildFile("runBenchmarkPPQTest", "", true))
+        {
+            if (directory.createDirectory().failed())
+                throw std::runtime_error("Could not create temporary PPQ test directory");
+        }
+
+        ~ScopedBenchmarkTestDirectory()
+        {
+            directory.deleteRecursively();
+        }
+
+        ScopedBenchmarkTestDirectory(const ScopedBenchmarkTestDirectory&) = delete;
+        ScopedBenchmarkTestDirectory& operator=(const ScopedBenchmarkTestDirectory&) = delete;
+
+        juce::File original() const { return directory.getChildFile("Original_Test.mid"); }
+        juce::File benchmark() const { return directory.getChildFile("Modified_Test.mid"); }
+
+    private:
+        juce::File directory;
+    };
+
+    void writeSyntheticMidi(const juce::File& path, int ppq, std::vector<Note> notes)
+    {
+        for (auto& note : notes)
+            note.isComplete = true;
+
+        juce::MidiFile reference;
+        reference.setTicksPerQuarterNote(ppq);
+        exportMidiFile(notesToMidiFile(notes, reference), path.getFullPathName());
+    }
+}
 
 std::vector<Note> testExtractNotes(const juce::MidiMessageSequence& sequence) {
     juce::MidiFile midiFile;
@@ -402,5 +496,314 @@ void outputMatchedInputTest::runTest() {
             expect(notesInMidiFile[i].startTick == notes[i].startTick);
             expect(notesInMidiFile[i].duration == notes[i].duration);
         }
+    });
+}
+
+void evaluate_knownResultTest::runTest() {
+    testCase("Evaluate known result", [&] {
+        std::vector<Note> originalNotes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0),
+            Note(64, 90, 0, 1, 960.0, 480.0),
+            Note(65, 95, 0, 1, 1440.0, 480.0)
+        };
+        std::vector<Note> benchmarkNotes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0)
+        };
+        for (auto& note : originalNotes) note.isComplete = true;
+        for (auto& note : benchmarkNotes) note.isComplete = true;
+        std::vector<std::size_t> selectedIndices = {0, 3};
+        BenchmarkResult result = evaluate(originalNotes, benchmarkNotes, selectedIndices, "test_song");
+        expectEquals(result.TP, 1);
+        expectEquals(result.FP, 1);
+        expectEquals(result.FN, 1);
+        expectEquals(result.precision, 0.5);
+        expectEquals(result.recall, 0.5);
+        expectEquals(result.f1, 0.5);
+    });
+}
+
+void evaluate_zeroResultTest::runTest() {
+    testCase("Evaluate zero result", [&] {
+        std::vector<Note> Notes = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 85, 0, 1, 480.0, 480.0)
+        };
+        std::vector<std::size_t> selectedIndices = {};
+        BenchmarkResult result = evaluate(Notes, Notes, selectedIndices, "test_song");
+        expectEquals(result.TP, 0);
+        expectEquals(result.FP, 0);
+        expectEquals(result.FN, 2);
+        expectEquals(result.precision, 0.0);
+        expectEquals(result.recall, 0.0);
+        expectEquals(result.f1, 0.0);
+    });
+}
+
+void pairFiles_generalTest::runTest() {
+    testCase("Pair Files General Test", [&] {
+        juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("pairFilesTest");
+        tempDir.createDirectory();
+        expect(tempDir.exists());
+        juce::File originalFile = tempDir.getChildFile("Original_Test.mid");
+        juce::File benchmarkFile = tempDir.getChildFile("Modified_Test.mid");
+        expect(originalFile.create().wasOk());
+        expect(benchmarkFile.create().wasOk());
+        expect(originalFile.existsAsFile());
+        expect(benchmarkFile.existsAsFile());
+        std::vector<FilePair> filePairs = pairFiles(tempDir.getFullPathName());
+        expectEquals(static_cast<int>(filePairs.size()), 1);
+        expectEquals(filePairs[0].original, originalFile.getFullPathName());
+        expectEquals(filePairs[0].benchmark, benchmarkFile.getFullPathName());
+        tempDir.deleteRecursively();
+    });
+}
+void pairFiles_noOriginalFilesTest::runTest() {
+    testCase("Pair Files No Original Files Test", [&] {
+        juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("pairFilesTestNoOriginal");
+        tempDir.createDirectory();
+        expect(tempDir.exists());
+        juce::File benchmarkFile = tempDir.getChildFile("Modified_Test.mid");
+        expect(benchmarkFile.create().wasOk());
+        expect(benchmarkFile.existsAsFile());
+        bool A = false;
+        try {
+            std::vector<FilePair> filePairs = pairFiles(tempDir.getFullPathName());
+        } catch (...) {
+            A = true;
+        }
+        expect(A);
+        tempDir.deleteRecursively();
+    });
+}
+
+void pairFiles_noBenchmarkFilesTest::runTest() {
+    testCase("Pair Files No Benchmark Files Test", [&] {
+        juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("pairFilesTestNoBenchmark");
+        tempDir.createDirectory();
+        expect(tempDir.exists());
+        juce::File originalFile = tempDir.getChildFile("Original_Test.mid");
+        expect(originalFile.create().wasOk());
+        expect(originalFile.existsAsFile());
+        bool A = false;
+        try {
+            std::vector<FilePair> filePairs = pairFiles(tempDir.getFullPathName());
+        } catch (...) {
+            A = true;
+        }
+        expect(A);
+        tempDir.deleteRecursively();
+    });
+}
+
+void pairFiles_directoryDoesNotExistTest::runTest() {
+    testCase("Pair Files Directory Does Not Exist Test", [&] {
+        try {
+            std::vector<FilePair> filePairs = pairFiles("non_existent_directory");
+        } catch (...) {
+            expect(true);
+            return;
+        }
+        expect(false);
+    });
+}
+
+void pairFiles_unicodeFileNamesTest::runTest() {
+    testCase("Pair Files Unicode File Names Test", [&] {
+        juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("pairFilesTestUnicode");
+        tempDir.createDirectory();
+        expect(tempDir.exists());
+        juce::File originalFile = tempDir.getChildFile("Original_千本桜.mid");
+        juce::File benchmarkFile = tempDir.getChildFile("Modified_千本桜.mid");
+        expect(originalFile.create().wasOk());
+        expect(benchmarkFile.create().wasOk());
+        expect(originalFile.existsAsFile());
+        expect(benchmarkFile.existsAsFile());
+        std::vector<FilePair> filePairs = pairFiles(tempDir.getFullPathName());
+        if (filePairs.size() != 1) 
+        {
+            expect(false);
+            return;
+        }
+        expectEquals(filePairs[0].original, originalFile.getFullPathName());
+        expectEquals(filePairs[0].benchmark, benchmarkFile.getFullPathName());
+        tempDir.deleteRecursively();
+    });
+}
+
+void benchmarkMicroAverageTest::runTest()
+{
+    testCase("Micro average combines counts across songs", [&] {
+        const auto report = makeSampleBenchmarkReport();
+        const auto micro = report.getMicroAverageResult();
+
+        // Combined counts: TP=10, FP=1, FN=1.
+        // Micro precision, recall, and F1 are all 10/11.
+        expectEquals(micro.TP, 10);
+        expectEquals(micro.FP, 1);
+        expectEquals(micro.FN, 1);
+        expectWithinAbsoluteError(micro.precision, 10.0 / 11.0, 1.0e-12);
+        expectWithinAbsoluteError(micro.recall, 10.0 / 11.0, 1.0e-12);
+        expectWithinAbsoluteError(micro.f1, 10.0 / 11.0, 1.0e-12);
+
+        // Aggregation must not overwrite the stored per-song counts.
+        expectEquals(report.results[0].TP, 1);
+        expectEquals(report.results[1].TP, 9);
+    });
+
+    testCase("Micro average handles zero counts without division errors", [&] {
+        BenchmarkReport report;
+        report.addResult(BenchmarkResult{});
+
+        const auto micro = report.getMicroAverageResult();
+        expectEquals(micro.TP, 0);
+        expectEquals(micro.FP, 0);
+        expectEquals(micro.FN, 0);
+        expectEquals(micro.precision, 0.0);
+        expectEquals(micro.recall, 0.0);
+        expectEquals(micro.f1, 0.0);
+    });
+
+    testCase("Micro average rejects an empty report", [&] {
+        const BenchmarkReport report;
+        expectThrowsType(report.getMicroAverageResult(), std::runtime_error);
+    });
+}
+
+void benchmarkMacroAverageTest::runTest()
+{
+    testCase("Macro average gives each song equal weight", [&] {
+        const auto report = makeSampleBenchmarkReport();
+        const auto macro = report.getMacroAverageResult();
+
+        // Mean P=(1/2 + 1)/2 = 3/4.
+        // Mean R=(1 + 9/10)/2 = 19/20.
+        // Mean F1=(2/3 + 18/19)/2 = 46/57.
+        // Macro F1 must NOT be recomputed from macro P and macro R.
+        expectWithinAbsoluteError(macro.precision, 3.0 / 4.0, 1.0e-12);
+        expectWithinAbsoluteError(macro.recall, 19.0 / 20.0, 1.0e-12);
+        expectWithinAbsoluteError(macro.f1, 46.0 / 57.0, 1.0e-12);
+
+        // Reading aggregate metrics must not change individual results.
+        expectEquals(static_cast<int>(report.results.size()), 2);
+        expectEquals(report.results[0].FP, 1);
+        expectEquals(report.results[1].FN, 1);
+        expectWithinAbsoluteError(report.results[0].f1, 2.0 / 3.0, 1.0e-12);
+    });
+
+    testCase("Macro average handles zero-valued metrics", [&] {
+        BenchmarkReport report;
+        report.addResult(BenchmarkResult{});
+
+        const auto macro = report.getMacroAverageResult();
+        expectEquals(macro.precision, 0.0);
+        expectEquals(macro.recall, 0.0);
+        expectEquals(macro.f1, 0.0);
+    });
+
+    testCase("Macro average rejects an empty report", [&] {
+        const BenchmarkReport report;
+        expectThrowsType(report.getMacroAverageResult(), std::runtime_error);
+    });
+}
+
+void benchmarkPrintReportTest::runTest()
+{
+    testCase("Print report includes songs, counts, and both aggregate summaries", [&] {
+        const auto report = makeSampleBenchmarkReport();
+        std::string output;
+
+        {
+            ScopedCoutCapture capture;
+            report.printReport();
+            output = capture.str();
+        }
+
+        expect(output.find("Song: Song A") != std::string::npos);
+        expect(output.find("TP: 1, FP: 1, FN: 0") != std::string::npos);
+        expect(output.find("Song: Song B") != std::string::npos);
+        expect(output.find("TP: 9, FP: 0, FN: 1") != std::string::npos);
+        expect(output.find("Micro Average - Precision:") != std::string::npos);
+        expect(output.find("Macro Average - Precision:") != std::string::npos);
+        expect(output.find("Micro Average - Precision:") > output.find("Song: Song B"));
+        expect(output.find("Macro Average - Precision:") > output.find("Micro Average - Precision:"));
+    });
+
+    testCase("Print report handles an empty result collection", [&] {
+        const BenchmarkReport report;
+        std::string output;
+
+        {
+            ScopedCoutCapture capture;
+            report.printReport();
+            output = capture.str();
+        }
+
+        expect(output == "No benchmark results available.\n");
+        expect(output.find("Micro Average") == std::string::npos);
+        expect(output.find("Macro Average") == std::string::npos);
+    });
+}
+
+
+void runBenchmarkPPQTest::runTest()
+{
+    testCase("runBenchmark accepts matching PPQ and evaluates note matches", [&] {
+        ScopedBenchmarkTestDirectory temp;
+
+        // At PPQ 480, select pitch 60 and 64; pitch 59 stays unselected.
+        // Only pitch 60 at tick 0 matches the modified reference.
+        // Therefore TP=1, FP=1, FN=1 and all three metrics = 0.5.
+        writeSyntheticMidi(temp.original(), 480, {
+            Note(60, 80, 0, 1, 0.0, 240.0),
+            Note(59, 80, 0, 1, 480.0, 240.0),
+            Note(64, 80, 0, 1, 960.0, 240.0)
+        });
+        writeSyntheticMidi(temp.benchmark(), 480, {
+            Note(60, 80, 0, 1, 0.0, 240.0),
+            Note(62, 80, 0, 1, 960.0, 240.0)
+        });
+
+        const BenchmarkResult result = runBenchmark(
+            temp.original().getFullPathName(), temp.benchmark().getFullPathName());
+
+        expectEquals(result.songName, temp.original().getFullPathName());
+        expectEquals(result.TP, 1);
+        expectEquals(result.FP, 1);
+        expectEquals(result.FN, 1);
+        expectEquals(result.precision, 0.5);
+        expectEquals(result.recall, 0.5);
+        expectEquals(result.f1, 0.5);
+    });
+
+    testCase("runBenchmark rejects differing PPQ and identifies both files", [&] {
+        ScopedBenchmarkTestDirectory temp;
+
+        // Same musical note, different resolutions: exact tick matching
+        // would be misleading unless PPQ is normalized first.
+        writeSyntheticMidi(temp.original(), 480, {
+            Note(60, 80, 0, 1, 0.0, 240.0)
+        });
+        writeSyntheticMidi(temp.benchmark(), 960, {
+            Note(60, 80, 0, 1, 0.0, 480.0)
+        });
+
+        bool rejectedMismatch = false;
+        try
+        {
+            (void) runBenchmark(temp.original().getFullPathName(),
+                                temp.benchmark().getFullPathName());
+        }
+        catch (const std::runtime_error& error)
+        {
+            rejectedMismatch = true;
+            const std::string message = error.what();
+            expect(message.find("different PPQ") != std::string::npos);
+            expect(message.find("Original_Test.mid") != std::string::npos);
+            expect(message.find("Modified_Test.mid") != std::string::npos);
+        }
+
+        expect(rejectedMismatch, "Mismatched PPQ must throw std::runtime_error");
     });
 }
