@@ -53,6 +53,47 @@ namespace
 }
 
 
+// Build a real, minimal MIDI file so runBenchmark() exercises file reading
+// and its PPQ guard, rather than just comparing two in-memory values.
+namespace
+{
+    class ScopedBenchmarkTestDirectory
+    {
+    public:
+        ScopedBenchmarkTestDirectory()
+            : directory(juce::File::getSpecialLocation(juce::File::tempDirectory)
+                            .getNonexistentChildFile("runBenchmarkPPQTest", "", true))
+        {
+            if (directory.createDirectory().failed())
+                throw std::runtime_error("Could not create temporary PPQ test directory");
+        }
+
+        ~ScopedBenchmarkTestDirectory()
+        {
+            directory.deleteRecursively();
+        }
+
+        ScopedBenchmarkTestDirectory(const ScopedBenchmarkTestDirectory&) = delete;
+        ScopedBenchmarkTestDirectory& operator=(const ScopedBenchmarkTestDirectory&) = delete;
+
+        juce::File original() const { return directory.getChildFile("Original_Test.mid"); }
+        juce::File benchmark() const { return directory.getChildFile("Modified_Test.mid"); }
+
+    private:
+        juce::File directory;
+    };
+
+    void writeSyntheticMidi(const juce::File& path, int ppq, std::vector<Note> notes)
+    {
+        for (auto& note : notes)
+            note.isComplete = true;
+
+        juce::MidiFile reference;
+        reference.setTicksPerQuarterNote(ppq);
+        exportMidiFile(notesToMidiFile(notes, reference), path.getFullPathName());
+    }
+}
+
 std::vector<Note> testExtractNotes(const juce::MidiMessageSequence& sequence) {
     juce::MidiFile midiFile;
     midiFile.addTrack(sequence);
@@ -702,5 +743,67 @@ void benchmarkPrintReportTest::runTest()
         expect(output == "No benchmark results available.\n");
         expect(output.find("Micro Average") == std::string::npos);
         expect(output.find("Macro Average") == std::string::npos);
+    });
+}
+
+
+void runBenchmarkPPQTest::runTest()
+{
+    testCase("runBenchmark accepts matching PPQ and evaluates note matches", [&] {
+        ScopedBenchmarkTestDirectory temp;
+
+        // At PPQ 480, select pitch 60 and 64; pitch 59 stays unselected.
+        // Only pitch 60 at tick 0 matches the modified reference.
+        // Therefore TP=1, FP=1, FN=1 and all three metrics = 0.5.
+        writeSyntheticMidi(temp.original(), 480, {
+            Note(60, 80, 0, 1, 0.0, 240.0),
+            Note(59, 80, 0, 1, 480.0, 240.0),
+            Note(64, 80, 0, 1, 960.0, 240.0)
+        });
+        writeSyntheticMidi(temp.benchmark(), 480, {
+            Note(60, 80, 0, 1, 0.0, 240.0),
+            Note(62, 80, 0, 1, 960.0, 240.0)
+        });
+
+        const BenchmarkResult result = runBenchmark(
+            temp.original().getFullPathName(), temp.benchmark().getFullPathName());
+
+        expectEquals(result.songName, temp.original().getFullPathName());
+        expectEquals(result.TP, 1);
+        expectEquals(result.FP, 1);
+        expectEquals(result.FN, 1);
+        expectEquals(result.precision, 0.5);
+        expectEquals(result.recall, 0.5);
+        expectEquals(result.f1, 0.5);
+    });
+
+    testCase("runBenchmark rejects differing PPQ and identifies both files", [&] {
+        ScopedBenchmarkTestDirectory temp;
+
+        // Same musical note, different resolutions: exact tick matching
+        // would be misleading unless PPQ is normalized first.
+        writeSyntheticMidi(temp.original(), 480, {
+            Note(60, 80, 0, 1, 0.0, 240.0)
+        });
+        writeSyntheticMidi(temp.benchmark(), 960, {
+            Note(60, 80, 0, 1, 0.0, 480.0)
+        });
+
+        bool rejectedMismatch = false;
+        try
+        {
+            (void) runBenchmark(temp.original().getFullPathName(),
+                                temp.benchmark().getFullPathName());
+        }
+        catch (const std::runtime_error& error)
+        {
+            rejectedMismatch = true;
+            const std::string message = error.what();
+            expect(message.find("different PPQ") != std::string::npos);
+            expect(message.find("Original_Test.mid") != std::string::npos);
+            expect(message.find("Modified_Test.mid") != std::string::npos);
+        }
+
+        expect(rejectedMismatch, "Mismatched PPQ must throw std::runtime_error");
     });
 }
