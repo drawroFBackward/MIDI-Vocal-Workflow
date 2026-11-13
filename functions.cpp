@@ -98,6 +98,11 @@ std::vector<Note> indicesToNotes(const std::vector<Note>& notes, const std::vect
     return selectedNotes;
 }
 
+bool noteMatches(const Note& note, const Note& benchmarkNote)
+{
+    return note.pitch == benchmarkNote.pitch && note.startTick == benchmarkNote.startTick;
+}
+
 int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices)
 {
     int count = 0;
@@ -109,7 +114,7 @@ int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<
         for (int j = 0; j < benchmarkNotes.size(); ++j)
         {
             const auto& benchmarkNote = benchmarkNotes[j];
-            if (!matched[j] && note.pitch == benchmarkNote.pitch && note.startTick == benchmarkNote.startTick)
+            if (!matched[j] && noteMatches(note, benchmarkNote))
             {
                 ++count;
                 matched[j] = true;
@@ -118,6 +123,36 @@ int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<
         }
     }
     return count;
+}
+
+SongResult runEvaluation(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices)
+{
+    SongResult result;
+    std::vector<bool> matched(benchmarkNotes.size(), false);
+    for (auto i : indices)
+    {
+        const auto& note = originalNotes[i];
+        bool found = false;
+        for (int j = 0; j < benchmarkNotes.size(); ++j)
+        {
+            const auto& benchmarkNote = benchmarkNotes[j];
+            if (!matched[j] && noteMatches(note, benchmarkNote))
+            {
+                result.truePositives.push_back(i);
+                matched[j] = true;
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+            result.falsePositives.push_back(i);
+    }
+    for (int j = 0; j < benchmarkNotes.size(); ++j)
+    {
+        if (!matched[j])
+            result.falseNegatives.push_back(j);
+    }
+    return result;
 }
 
 juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, const juce::MidiFile& reference)
