@@ -40,6 +40,8 @@ int main() {
     benchmarkPrintReportTest AB;
     // runBenchmark PPQ compatibility tests
     runBenchmarkPPQTest AC;
+    // Day 11 classification tests
+    songResultClassificationTest AD;
 
     // run all tests
     juce::UnitTestRunner runner;
