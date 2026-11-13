@@ -183,9 +183,10 @@ void exportMidiFile(const juce::MidiFile& midiFile, const juce::String& path)
 
 BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const juce::String& songName)
 {
-    int tp = truePositiveNotes(originalNotes, benchmarkNotes, indices);
-    int fp = static_cast<int>(indices.size()) - tp;
-    int fn = static_cast<int>(benchmarkNotes.size()) - tp;
+    SongResult songResult = runEvaluation(originalNotes, benchmarkNotes, indices);
+    int tp = static_cast<int>(songResult.truePositives.size());
+    int fp = static_cast<int>(songResult.falsePositives.size());
+    int fn = static_cast<int>(songResult.falseNegatives.size());
 
     double p = (tp + fp > 0) ? static_cast<double>(tp) / (tp + fp) : 0;
     double r = (tp + fn > 0) ? static_cast<double>(tp) / (tp + fn) : 0;
