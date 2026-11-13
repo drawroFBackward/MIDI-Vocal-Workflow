@@ -220,3 +220,11 @@ public:
     runBenchmarkPPQTest() : juce::UnitTest("Run Benchmark PPQ Test") {}
     void runTest() override;
 };
+
+// Day 11: classification returns original indices for TP/FP and reference indices for FN.
+class songResultClassificationTest : public juce::UnitTest
+{
+public:
+    songResultClassificationTest() : juce::UnitTest("Song Result Classification Test") {}
+    void runTest() override;
+};
