@@ -61,9 +61,9 @@ std::vector<Note> indicesToNotes(const std::vector<Note>& notes, const std::vect
 
 bool noteMatches(const Note& note, const Note& benchmarkNote);
 
-int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices);
-
 SongResult runEvaluation(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices);
+
+int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices);
 
 juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, const juce::MidiFile& reference);
 

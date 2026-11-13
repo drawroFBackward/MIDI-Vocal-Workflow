@@ -103,28 +103,6 @@ bool noteMatches(const Note& note, const Note& benchmarkNote)
     return note.pitch == benchmarkNote.pitch && note.startTick == benchmarkNote.startTick;
 }
 
-int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices)
-{
-    int count = 0;
-    std::vector<bool> matched(benchmarkNotes.size(), false);
-    for (auto i : indices)
-    {
-        const auto& note = originalNotes[i];
-
-        for (int j = 0; j < benchmarkNotes.size(); ++j)
-        {
-            const auto& benchmarkNote = benchmarkNotes[j];
-            if (!matched[j] && noteMatches(note, benchmarkNote))
-            {
-                ++count;
-                matched[j] = true;
-                break;
-            }
-        }
-    }
-    return count;
-}
-
 SongResult runEvaluation(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices)
 {
     SongResult result;
@@ -153,6 +131,13 @@ SongResult runEvaluation(const std::vector<Note>& originalNotes, const std::vect
             result.falseNegatives.push_back(j);
     }
     return result;
+}
+
+int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices)
+{
+    SongResult result = runEvaluation(originalNotes, benchmarkNotes, indices);
+    int count = static_cast<int>(result.truePositives.size());
+    return count;
 }
 
 juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, const juce::MidiFile& reference)
