@@ -807,3 +807,164 @@ void runBenchmarkPPQTest::runTest()
         expect(rejectedMismatch, "Mismatched PPQ must throw std::runtime_error");
     });
 }
+
+
+void songResultClassificationTest::runTest()
+{
+    testCase("Classify selected notes and preserve original/reference index spaces", [&] {
+        // The second note duplicates the first; note 2 is intentionally unselected.
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(60, 80, 1, 2, 0.0, 240.0),
+            Note(64, 80, 0, 1, 480.0, 480.0),
+            Note(67, 80, 0, 1, 960.0, 480.0)
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(64, 80, 0, 1, 480.0, 480.0)
+        };
+        const std::vector<std::size_t> selected = {0, 1, 3};
+
+        const SongResult result = runEvaluation(original, reference, selected);
+
+        // TP and FP refer to original indices; FN refers to reference indices.
+        expect(result.truePositives == std::vector<std::size_t>{0});
+        expect(result.falsePositives == std::vector<std::size_t>{1, 3});
+        expect(result.falseNegatives == std::vector<std::size_t>{1});
+        expectEquals(static_cast<int>(result.truePositives.size() + result.falsePositives.size()),
+                     static_cast<int>(selected.size()));
+        expectEquals(static_cast<int>(result.truePositives.size() + result.falseNegatives.size()),
+                     static_cast<int>(reference.size()));
+    });
+
+    testCase("Consume duplicate reference notes at most once each", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 100.0),
+            Note(60, 80, 0, 1, 0.0, 100.0),
+            Note(60, 80, 0, 1, 0.0, 100.0)
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 100.0),
+            Note(60, 80, 0, 1, 0.0, 100.0)
+        };
+        const std::vector<std::size_t> selected = {0, 1, 2};
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        expect(result.truePositives == std::vector<std::size_t>{0, 1});
+        expect(result.falsePositives == std::vector<std::size_t>{2});
+        expect(result.falseNegatives.empty());
+        expectEquals(truePositiveNotes(original, reference, selected), 2);
+    });
+
+    testCase("Unselected original notes do not count as false positives", [&] {
+        const std::vector<Note> original = {
+            Note(72, 80, 0, 1, 0.0, 120.0),
+            Note(55, 80, 0, 1, 480.0, 120.0)
+        };
+        const std::vector<Note> reference = {
+            Note(72, 80, 0, 1, 0.0, 120.0),
+            Note(55, 80, 0, 1, 480.0, 120.0)
+        };
+        const std::vector<std::size_t> selected = {0};
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        expect(result.truePositives == std::vector<std::size_t>{0});
+        expect(result.falsePositives.empty());
+        expect(result.falseNegatives == std::vector<std::size_t>{1});
+    });
+
+    testCase("No selected notes means all reference notes are false negatives", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 120.0)
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 120.0),
+            Note(62, 80, 0, 1, 480.0, 120.0)
+        };
+        const std::vector<std::size_t> selected;
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        expect(result.truePositives.empty());
+        expect(result.falsePositives.empty());
+        expect(result.falseNegatives == std::vector<std::size_t>{0, 1});
+    });
+
+    testCase("Empty reference means all selected notes are false positives", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 120.0),
+            Note(50, 80, 0, 1, 240.0, 120.0),
+            Note(62, 80, 0, 1, 480.0, 120.0)
+        };
+        const std::vector<Note> reference;
+        const std::vector<std::size_t> selected = {0, 2};
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        expect(result.truePositives.empty());
+        expect(result.falsePositives == std::vector<std::size_t>{0, 2});
+        expect(result.falseNegatives.empty());
+    });
+
+    testCase("Empty inputs yield empty classifications", [&] {
+        const std::vector<Note> original;
+        const std::vector<Note> reference;
+        const std::vector<std::size_t> selected;
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        expect(result.truePositives.empty());
+        expect(result.falsePositives.empty());
+        expect(result.falseNegatives.empty());
+    });
+
+    testCase("Match requires pitch and onset but not track, channel or duration", [&] {
+        const std::vector<Note> original = {
+            Note(65, 90, 4, 5, 480.0, 200.0),
+            Note(65, 90, 4, 5, 481.0, 200.0),
+            Note(66, 90, 4, 5, 480.0, 200.0)
+        };
+        const std::vector<Note> reference = {
+            Note(65, 50, 0, 1, 480.0, 100.0)
+        };
+        const std::vector<std::size_t> selected = {0, 1, 2};
+
+        expect(noteMatches(original[0], reference[0]));
+        expect(!noteMatches(original[1], reference[0])); // onset differs
+        expect(!noteMatches(original[2], reference[0])); // pitch differs
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        expect(result.truePositives == std::vector<std::size_t>{0});
+        expect(result.falsePositives == std::vector<std::size_t>{1, 2});
+        expect(result.falseNegatives.empty());
+    });
+
+    testCase("Classification agrees with existing benchmark counts and is nonmutating", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 80, 0, 1, 480.0, 480.0),
+            Note(65, 80, 0, 1, 960.0, 480.0)
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(64, 80, 0, 1, 480.0, 480.0)
+        };
+        const std::vector<std::size_t> selected = {0, 2};
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        const BenchmarkResult metrics = evaluate(original, reference, selected, "unchanged");
+        expectEquals(metrics.TP, static_cast<int>(result.truePositives.size()));
+        expectEquals(metrics.FP, static_cast<int>(result.falsePositives.size()));
+        expectEquals(metrics.FN, static_cast<int>(result.falseNegatives.size()));
+        expectEquals(metrics.TP, 1);
+        expectEquals(metrics.FP, 1);
+        expectEquals(metrics.FN, 1);
+
+        // Re-running classification must preserve both the indices and note data.
+        const SongResult again = runEvaluation(original, reference, selected);
+        expect(again.truePositives == result.truePositives);
+        expect(again.falsePositives == result.falsePositives);
+        expect(again.falseNegatives == result.falseNegatives);
+        expect(selected == std::vector<std::size_t>{0, 2});
+        expectEquals(original[0].pitch, 60);
+        expectEquals(original[2].startTick, 960.0);
+        expectEquals(reference[1].pitch, 64);
+    });
+}
