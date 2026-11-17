@@ -87,4 +87,4 @@ std::vector<FilePair> pairFiles(const juce::String& directoryPath);
 
 double getSongLength(const juce::MidiFile& midiFile, const juce::MidiFile& benchmarkMidiFile);
 
-std::vector<songWindow> runSongWindowAnalysis(const juce::String& originalMidiFilePath, const juce::String& benchmarkMidiFilePath, int numberOfWindows);
+std::vector<songWindow> runSongWindowAnalysis(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<size_t>& selectedIndices, int numberOfWindows, double songLength);
