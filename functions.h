@@ -13,7 +13,7 @@ struct FilePair{
     juce::String benchmark;
 };
 
-struct songResult{
+struct SongResult{
     std::vector<size_t> truePositives;
     std::vector<size_t> falsePositives;
     std::vector<size_t> falseNegatives;
@@ -50,7 +50,7 @@ struct songWindow{
     int FP;
     int FN;
     songWindow(double start, double end) : startTick(start), endTick(end), TP(0), FP(0), FN(0) {}
-    void getResult(const songResult& result, const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes);
+    void getResult(const SongResult& result, const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes);
 };
 
 juce::File filePath(const juce::String& path);
@@ -71,7 +71,7 @@ std::vector<Note> indicesToNotes(const std::vector<Note>& notes, const std::vect
 
 bool noteMatches(const Note& note, const Note& benchmarkNote);
 
-songResult runEvaluation(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices);
+SongResult runEvaluation(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices);
 
 int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices);
 
