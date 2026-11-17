@@ -50,7 +50,7 @@ struct songWindow{
     int FP;
     int FN;
     songWindow(double start, double end) : startTick(start), endTick(end), TP(0), FP(0), FN(0) {}
-    void getResult(const songResult& result, const std::vector<Note>& originalNotes);
+    void getResult(const songResult& result, const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes);
 };
 
 juce::File filePath(const juce::String& path);

@@ -341,7 +341,7 @@ void BenchmarkReport::printReport() const
     std::cout << "Macro Average - Precision: " << macroAverage.precision << ", Recall: " << macroAverage.recall << ", F1: " << macroAverage.f1 << "\n";
 }
 
-void songWindow::getResult(const songResult& result, const std::vector<Note>& originalNotes)
+void songWindow::getResult(const songResult& result, const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes)
 {
     TP = 0;
     FP = 0;
@@ -358,7 +358,7 @@ void songWindow::getResult(const songResult& result, const std::vector<Note>& or
     }
     for (const auto& index : result.falseNegatives)
     {
-        if (originalNotes[index].startTick >= startTick && originalNotes[index].startTick < endTick)
+        if (benchmarkNotes[index].startTick >= startTick && benchmarkNotes[index].startTick < endTick)
             ++FN;
     }
 }
@@ -385,7 +385,7 @@ std::vector<songWindow> runSongWindowAnalysis(const juce::String& originalMidiFi
     for (int i = 0; i < numberOfWindows; ++i)
     {
         songWindow window(windowSize * i, windowSize * (i + 1));
-        window.getResult(result, originalNotes);
+        window.getResult(result, originalNotes, benchmarkNotes);
         windows.push_back(window);
     }
     return windows;
