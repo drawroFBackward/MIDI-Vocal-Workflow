@@ -50,7 +50,6 @@ struct songWindow{
     int FP;
     int FN;
     songWindow(double start, double end) : startTick(start), endTick(end), TP(0), FP(0), FN(0) {}
-    void getResult(const SongResult& result, const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes);
 };
 
 juce::File filePath(const juce::String& path);
@@ -86,5 +85,8 @@ std::vector<juce::String> findOriginalMidiFiles(const juce::String& directoryPat
 std::vector<FilePair> pairFiles(const juce::String& directoryPath);
 
 double getSongLength(const juce::MidiFile& midiFile, const juce::MidiFile& benchmarkMidiFile);
+
+// Check that all classified notes were counted exactly once across the windows.
+bool windowCountsMatch(const std::vector<songWindow>& windows, const SongResult& classification);
 
 std::vector<songWindow> runSongWindowAnalysis(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<size_t>& selectedIndices, int numberOfWindows, double songLength);
