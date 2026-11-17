@@ -341,26 +341,26 @@ void BenchmarkReport::printReport() const
     std::cout << "Macro Average - Precision: " << macroAverage.precision << ", Recall: " << macroAverage.recall << ", F1: " << macroAverage.f1 << "\n";
 }
 
-void songWindow::getResult(const SongResult& result, const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes)
+// Verify the partition invariant: every classified note must be counted once.
+bool windowCountsMatch(const std::vector<songWindow>& windows, const SongResult& classification)
 {
-    TP = 0;
-    FP = 0;
-    FN = 0;
-    for (const auto& index : result.truePositives)
+    std::size_t tpCount = 0;
+    std::size_t fpCount = 0;
+    std::size_t fnCount = 0;
+
+    for (const auto& window : windows)
     {
-        if (originalNotes[index].startTick >= startTick && originalNotes[index].startTick < endTick)
-            ++TP;
+        if (window.TP < 0 || window.FP < 0 || window.FN < 0)
+            return false;
+
+        tpCount += static_cast<std::size_t>(window.TP);
+        fpCount += static_cast<std::size_t>(window.FP);
+        fnCount += static_cast<std::size_t>(window.FN);
     }
-    for (const auto& index : result.falsePositives)
-    {
-        if (originalNotes[index].startTick >= startTick && originalNotes[index].startTick < endTick)
-            ++FP;
-    }
-    for (const auto& index : result.falseNegatives)
-    {
-        if (benchmarkNotes[index].startTick >= startTick && benchmarkNotes[index].startTick < endTick)
-            ++FN;
-    }
+
+    return tpCount == classification.truePositives.size()
+        && fpCount == classification.falsePositives.size()
+        && fnCount == classification.falseNegatives.size();
 }
 
 double getSongLength(const juce::MidiFile& midiFile, const juce::MidiFile& benchmarkMidiFile)
@@ -368,25 +368,56 @@ double getSongLength(const juce::MidiFile& midiFile, const juce::MidiFile& bench
     return std::max(midiFile.getLastTimestamp(), benchmarkMidiFile.getLastTimestamp());
 }
 
-std::vector<songWindow> runSongWindowAnalysis(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<size_t>& selectedIndices, int numberOfWindows, double songLength)
+std::vector<songWindow> runSongWindowAnalysis(const std::vector<Note>& originalNotes,
+                                              const std::vector<Note>& benchmarkNotes,
+                                              const std::vector<size_t>& selectedIndices,
+                                              int numberOfWindows, double songLength)
 {
     if (numberOfWindows <= 0)
-    {
-        std::cout << "Number of windows must be positive\n";
-        return {};
-    }
+        throw std::invalid_argument("Number of windows must be positive");
 
-    const SongResult result = runEvaluation(originalNotes, benchmarkNotes, selectedIndices);
+    if (!std::isfinite(songLength) || songLength <= 0.0)
+        throw std::invalid_argument("Song length must be finite and positive");
 
-    double windowSize = songLength / numberOfWindows;
+    const SongResult classification = runEvaluation(originalNotes, benchmarkNotes, selectedIndices);
+    const double windowSize = songLength / numberOfWindows;
+
+    if (!std::isfinite(windowSize) || windowSize <= 0.0)
+        throw std::invalid_argument("Window size must be finite and positive");
 
     std::vector<songWindow> windows;
-
+    windows.reserve(static_cast<std::size_t>(numberOfWindows));
     for (int i = 0; i < numberOfWindows; ++i)
+        windows.emplace_back(windowSize * i, windowSize * (i + 1));
+
+    // Each note is assigned directly to its window, rather than rescanning
+    // all classified notes for every window (O(W + N) instead of O(W * N)).
+    const auto findWindow = [&](const Note& note) -> std::size_t
     {
-        songWindow window(windowSize * i, windowSize * (i + 1));
-        window.getResult(result, originalNotes, benchmarkNotes);
-        windows.push_back(window);
-    }
+        const double tick = note.startTick;
+        if (!std::isfinite(tick) || tick < 0.0 || tick > songLength)
+            throw std::out_of_range("Classified note onset is outside the song timeline");
+
+        // The final window includes the song endpoint; intermediate windows
+        // remain half-open [startTick, endTick).
+        if (tick == songLength)
+            return windows.size() - 1;
+
+        const auto index = static_cast<std::size_t>(tick / windowSize);
+        return std::min(index, windows.size() - 1);
+    };
+
+    for (const auto index : classification.truePositives)
+        ++windows[findWindow(originalNotes.at(index))].TP;
+
+    for (const auto index : classification.falsePositives)
+        ++windows[findWindow(originalNotes.at(index))].FP;
+
+    for (const auto index : classification.falseNegatives)
+        ++windows[findWindow(benchmarkNotes.at(index))].FN;
+
+    if (!windowCountsMatch(windows, classification))
+        throw std::logic_error("Window counts disagree with song classification");
+
     return windows;
 }
