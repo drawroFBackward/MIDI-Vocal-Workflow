@@ -363,6 +363,11 @@ void songWindow::getResult(const SongResult& result, const std::vector<Note>& or
     }
 }
 
+double getSongLength(const juce::MidiFile& midiFile, const juce::MidiFile& benchmarkMidiFile)
+{
+    return std::max(midiFile.getLastTimestamp(), benchmarkMidiFile.getLastTimestamp());
+}
+
 std::vector<songWindow> runSongWindowAnalysis(const juce::String& originalMidiFilePath, const juce::String& benchmarkMidiFilePath, int numberOfWindows)
 {
     if (numberOfWindows <= 0)
@@ -378,7 +383,7 @@ std::vector<songWindow> runSongWindowAnalysis(const juce::String& originalMidiFi
     const std::vector<std::size_t> indices = selectNotes(originalNotes);
     const SongResult result = runEvaluation(originalNotes, benchmarkNotes, indices);
 
-    double windowSize = originalMidiFile.getLastTimestamp() / numberOfWindows;
+    double windowSize = getSongLength(originalMidiFile, benchmarkMidiFile) / numberOfWindows;
 
     std::vector<songWindow> windows;
 
