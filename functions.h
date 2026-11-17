@@ -13,7 +13,7 @@ struct FilePair{
     juce::String benchmark;
 };
 
-struct SongResult{
+struct songResult{
     std::vector<size_t> truePositives;
     std::vector<size_t> falsePositives;
     std::vector<size_t> falseNegatives;
@@ -43,6 +43,16 @@ struct BenchmarkReport{
     void printReport() const;
 };
 
+struct songWindow{
+    double startTick;
+    double endTick;
+    int TP;
+    int FP;
+    int FN;
+    songWindow(double start, double end) : startTick(start), endTick(end), TP(0), FP(0), FN(0) {}
+    void getResult(const songResult& result, const std::vector<Note>& originalNotes);
+};
+
 juce::File filePath(const juce::String& path);
 
 juce::MidiFile readMidiFile(const juce::String& path);
@@ -61,7 +71,7 @@ std::vector<Note> indicesToNotes(const std::vector<Note>& notes, const std::vect
 
 bool noteMatches(const Note& note, const Note& benchmarkNote);
 
-SongResult runEvaluation(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices);
+songResult runEvaluation(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices);
 
 int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices);
 
@@ -74,3 +84,5 @@ void runAndExport(const juce::String& originalMidiFilePath);
 std::vector<juce::String> findOriginalMidiFiles(const juce::String& directoryPath);
 
 std::vector<FilePair> pairFiles(const juce::String& directoryPath);
+
+std::vector<songWindow> runSongWindowAnalysis(const juce::String& originalMidiFilePath, const juce::String& benchmarkMidiFilePath, int numberOfWindows);
