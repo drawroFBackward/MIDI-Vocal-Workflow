@@ -1,5 +1,6 @@
 #include "tests.h"
 #include <sstream>
+#include <limits>
 
 namespace
 {
@@ -966,5 +967,141 @@ void songResultClassificationTest::runTest()
         expectEquals(original[0].pitch, 60);
         expectEquals(original[2].startTick, 960.0);
         expectEquals(reference[1].pitch, 64);
+    });
+}
+
+
+void songWindowAnalysisTest::runTest()
+{
+    testCase("Fixed-count windows classify notes once, including the exact final endpoint", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 1.0),  // TP: window 0
+            Note(61, 80, 0, 1, 3.0, 1.0),  // FP: window 1
+            Note(62, 80, 0, 1, 5.0, 1.0),  // FP: window 2
+            Note(63, 80, 0, 1, 10.0, 0.0)  // FP: final window, at endpoint
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 1.0),
+            Note(70, 80, 0, 1, 6.0, 1.0),  // FN: window 3 (boundary)
+            Note(71, 80, 0, 1, 10.0, 0.0)  // FN: final window, at endpoint
+        };
+        const std::vector<std::size_t> selected = {0, 1, 2, 3};
+        const SongResult classification = runEvaluation(original, reference, selected);
+        const auto windows = runSongWindowAnalysis(original, reference, selected, 5, 10.0);
+
+        expectEquals(static_cast<int>(windows.size()), 5);
+        expectEquals(windows[0].startTick, 0.0);
+        expectEquals(windows[0].endTick, 2.0);
+        expectEquals(windows[4].startTick, 8.0);
+        expectEquals(windows[4].endTick, 10.0);
+
+        expectEquals(windows[0].TP, 1);
+        expectEquals(windows[0].FP, 0);
+        expectEquals(windows[0].FN, 0);
+        expectEquals(windows[1].TP, 0);
+        expectEquals(windows[1].FP, 1);
+        expectEquals(windows[1].FN, 0);
+        expectEquals(windows[2].TP, 0);
+        expectEquals(windows[2].FP, 1);
+        expectEquals(windows[2].FN, 0);
+        expectEquals(windows[3].TP, 0);
+        expectEquals(windows[3].FP, 0);
+        expectEquals(windows[3].FN, 1);
+        expectEquals(windows[4].TP, 0);
+        expectEquals(windows[4].FP, 1);
+        expectEquals(windows[4].FN, 1);
+
+        expect(windowCountsMatch(windows, classification));
+    });
+
+    testCase("False negatives beyond original MIDI's timeline are counted", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 100.0)
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 100.0),
+            Note(65, 80, 0, 1, 1200.0, 100.0)
+        };
+        const std::vector<std::size_t> selected = {0};
+        const auto windows = runSongWindowAnalysis(original, reference, selected, 4, 1300.0);
+
+        expectEquals(static_cast<int>(windows.size()), 4);
+        expectEquals(windows[0].TP, 1);
+        expectEquals(windows[3].FN, 1);
+        expect(windowCountsMatch(windows, runEvaluation(original, reference, selected)));
+    });
+
+    testCase("All-empty notes can still produce zero-count windows with valid song length", [&] {
+        const std::vector<Note> original;
+        const std::vector<Note> reference;
+        const std::vector<std::size_t> selected;
+        const auto windows = runSongWindowAnalysis(original, reference, selected, 3, 120.0);
+
+        expectEquals(static_cast<int>(windows.size()), 3);
+        for (const auto& window : windows)
+        {
+            expectEquals(window.TP, 0);
+            expectEquals(window.FP, 0);
+            expectEquals(window.FN, 0);
+        }
+        expect(windowCountsMatch(windows, runEvaluation(original, reference, selected)));
+    });
+
+    testCase("Zero, negative, and non-finite song lengths are rejected", [&] {
+        const std::vector<Note> original;
+        const std::vector<Note> reference;
+        const std::vector<std::size_t> selected;
+
+        expectThrowsType(runSongWindowAnalysis(original, reference, selected, 4, 0.0), std::invalid_argument);
+        expectThrowsType(runSongWindowAnalysis(original, reference, selected, 4, -1.0), std::invalid_argument);
+        expectThrowsType(runSongWindowAnalysis(original, reference, selected, 4,
+                         std::numeric_limits<double>::infinity()), std::invalid_argument);
+    });
+
+    testCase("Non-positive window counts are rejected", [&] {
+        const std::vector<Note> original;
+        const std::vector<Note> reference;
+        const std::vector<std::size_t> selected;
+
+        expectThrowsType(runSongWindowAnalysis(original, reference, selected, 0, 120.0), std::invalid_argument);
+        expectThrowsType(runSongWindowAnalysis(original, reference, selected, -2, 120.0), std::invalid_argument);
+    });
+
+    testCase("Invalid note onsets never silently disappear", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 121.0, 1.0)
+        };
+        const std::vector<Note> reference;
+        const std::vector<std::size_t> selected = {0};
+
+        expectThrowsType(runSongWindowAnalysis(original, reference, selected, 4, 120.0), std::out_of_range);
+
+        const std::vector<Note> negativeOnset = {
+            Note(60, 80, 0, 1, -1.0, 1.0)
+        };
+        expectThrowsType(runSongWindowAnalysis(negativeOnset, reference, selected, 4, 120.0),
+                         std::out_of_range);
+    });
+
+    testCase("Count consistency helper detects mismatched or negative counts", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 1.0),
+            Note(62, 80, 0, 1, 200.0, 1.0)
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 1.0),
+            Note(70, 80, 0, 1, 300.0, 1.0)
+        };
+        const std::vector<std::size_t> selected = {0, 1};
+        const SongResult classification = runEvaluation(original, reference, selected);
+        auto windows = runSongWindowAnalysis(original, reference, selected, 4, 400.0);
+        expect(windowCountsMatch(windows, classification));
+
+        ++windows[0].FP;
+        expect(!windowCountsMatch(windows, classification));
+        --windows[0].FP;
+
+        windows[0].TP = -1;
+        expect(!windowCountsMatch(windows, classification));
     });
 }
