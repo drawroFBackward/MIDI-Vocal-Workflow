@@ -228,3 +228,12 @@ public:
     songResultClassificationTest() : juce::UnitTest("Song Result Classification Test") {}
     void runTest() override;
 };
+
+
+// Day 11: fixed-count temporal windows, endpoint handling, and count invariants.
+class songWindowAnalysisTest : public juce::UnitTest
+{
+public:
+    songWindowAnalysisTest() : juce::UnitTest("Song Window Analysis Test") {}
+    void runTest() override;
+};
