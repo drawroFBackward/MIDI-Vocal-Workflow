@@ -103,9 +103,9 @@ bool noteMatches(const Note& note, const Note& benchmarkNote)
     return note.pitch == benchmarkNote.pitch && note.startTick == benchmarkNote.startTick;
 }
 
-songResult runEvaluation(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices)
+SongResult runEvaluation(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices)
 {
-    songResult result;
+    SongResult result;
     std::vector<bool> matched(benchmarkNotes.size(), false);
     for (auto i : indices)
     {
@@ -135,7 +135,7 @@ songResult runEvaluation(const std::vector<Note>& originalNotes, const std::vect
 
 int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices)
 {
-    songResult result = runEvaluation(originalNotes, benchmarkNotes, indices);
+    SongResult result = runEvaluation(originalNotes, benchmarkNotes, indices);
     int count = static_cast<int>(result.truePositives.size());
     return count;
 }
@@ -183,10 +183,10 @@ void exportMidiFile(const juce::MidiFile& midiFile, const juce::String& path)
 
 BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const juce::String& songName)
 {
-    songResult songResult = runEvaluation(originalNotes, benchmarkNotes, indices);
-    int tp = static_cast<int>(songResult.truePositives.size());
-    int fp = static_cast<int>(songResult.falsePositives.size());
-    int fn = static_cast<int>(songResult.falseNegatives.size());
+    SongResult classification = runEvaluation(originalNotes, benchmarkNotes, indices);
+    int tp = static_cast<int>(classification.truePositives.size());
+    int fp = static_cast<int>(classification.falsePositives.size());
+    int fn = static_cast<int>(classification.falseNegatives.size());
 
     double p = (tp + fp > 0) ? static_cast<double>(tp) / (tp + fp) : 0;
     double r = (tp + fn > 0) ? static_cast<double>(tp) / (tp + fn) : 0;
@@ -341,7 +341,7 @@ void BenchmarkReport::printReport() const
     std::cout << "Macro Average - Precision: " << macroAverage.precision << ", Recall: " << macroAverage.recall << ", F1: " << macroAverage.f1 << "\n";
 }
 
-void songWindow::getResult(const songResult& result, const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes)
+void songWindow::getResult(const SongResult& result, const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes)
 {
     TP = 0;
     FP = 0;
@@ -376,7 +376,7 @@ std::vector<songWindow> runSongWindowAnalysis(const juce::String& originalMidiFi
     const std::vector<Note> originalNotes = extractNotes(originalMidiFile);
     const std::vector<Note> benchmarkNotes = extractNotes(benchmarkMidiFile);
     const std::vector<std::size_t> indices = selectNotes(originalNotes);
-    const songResult result = runEvaluation(originalNotes, benchmarkNotes, indices);
+    const SongResult result = runEvaluation(originalNotes, benchmarkNotes, indices);
 
     double windowSize = originalMidiFile.getLastTimestamp() / numberOfWindows;
 
