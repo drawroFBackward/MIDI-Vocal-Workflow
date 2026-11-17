@@ -42,6 +42,8 @@ int main() {
     runBenchmarkPPQTest AC;
     // Day 11 classification tests
     songResultClassificationTest AD;
+    // Day 11 time-window validation and counting
+    songWindowAnalysisTest AE;
 
     // run all tests
     juce::UnitTestRunner runner;
