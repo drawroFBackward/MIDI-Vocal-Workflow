@@ -15,6 +15,7 @@ juce::File filePath(const juce::String& path);
 
 juce::MidiFile readMidiFile(const juce::String& path);
 
+// Converts MIDI note-on/off messages into Note objects; unmatched note-ons stay incomplete.
 std::vector<Note> extractNotes(const juce::MidiFile& midiFile);
 
 juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, const juce::MidiFile& reference);
@@ -28,6 +29,7 @@ std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPi
 
 std::vector<std::size_t> selectNotes(const std::vector<Note>& notes);
 
+// Materialize selected note indices as copies, ready for MIDI export.
 std::vector<Note> indicesToNotes(const std::vector<Note>& notes, const std::vector<std::size_t>& indices);
 
 // Matching and per-song evaluation
@@ -55,8 +57,10 @@ bool noteMatches(const Note& note, const Note& benchmarkNote);
 
 SongResult runEvaluation(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices);
 
+// Compatibility count helper; runEvaluation is the source of note-level labels.
 int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices);
 
+// Per-song precision, recall and F1; undefined denominators use the existing zero convention.
 BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const juce::String& songName = "");
 
 // Dataset discovery and benchmark reporting
@@ -68,6 +72,7 @@ struct FilePair{
     juce::String benchmark;
 };
 
+// Micro averages weight notes; macro averages weight songs equally.
 struct BenchmarkReport{
     std::vector<BenchmarkResult> results;
     void addResult(const BenchmarkResult& result);
@@ -79,6 +84,7 @@ struct BenchmarkReport{
 
 std::vector<juce::String> findOriginalMidiFiles(const juce::String& directoryPath);
 
+// Warns about unmatched originals; throws if no complete pairs are found.
 std::vector<FilePair> pairFiles(const juce::String& directoryPath);
 
 BenchmarkResult runBenchmark(const juce::String& originalMidiFilePath, const juce::String& benchmarkMidiFilePath);
@@ -97,6 +103,7 @@ struct songWindow{
     bool isVocal() const { return TP + FN > 0; }
 };
 
+// Grouped FP totals for reference-onset versus no-reference-onset windows.
 struct SongWindowSummary
 {
     std::size_t vocalWindowCount = 0;
@@ -105,14 +112,19 @@ struct SongWindowSummary
     int nonVocalFP = 0;
 };
 
+// Window span uses the later MIDI endpoint, including reference notes after the original.
 double getSongLength(const juce::MidiFile& midiFile, const juce::MidiFile& benchmarkMidiFile);
 
+// Conservation check: every classified TP/FP/FN must appear in exactly one window.
 bool windowCountsMatch(const std::vector<songWindow>& windows, const SongResult& classification);
 
+// Fixed number of equally sized tick windows. Caller must validate matching PPQ.
+// Pure note-level computation: no file reads, no change to the selector.
 std::vector<songWindow> runSongWindowAnalysis(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<size_t>& selectedIndices, int numberOfWindows, double songLength);
 
 SongWindowSummary summarizeSongWindows(const std::vector<songWindow>& windows);
 
+// Percentage returns 0 for zero FPs; printed reports use N/A for that case.
 double percentageFPinVocalWindows(const std::vector<songWindow>& windows);
 
 double averageFPperWindow(const std::vector<songWindow>& windows, bool Vocal = true);
@@ -121,4 +133,5 @@ void printSongWindowAnalysis(const std::vector<songWindow>& windows);
 
 // Single-file vocal-note export workflow
 
+// Writes Vocal_<original filename> in the current working directory.
 void runAndExport(const juce::String& originalMidiFilePath);
