@@ -382,6 +382,9 @@ std::vector<songWindow> runSongWindowAnalysis(const std::vector<Note>& originalN
     const SongResult classification = runEvaluation(originalNotes, benchmarkNotes, selectedIndices);
     const double windowSize = songLength / numberOfWindows;
 
+    if (!std::isfinite(windowSize) || windowSize <= 0.0)
+        throw std::invalid_argument("Window size must be finite and positive");
+
     std::vector<songWindow> windows;
     windows.reserve(static_cast<std::size_t>(numberOfWindows));
     for (int i = 0; i < numberOfWindows; ++i)
@@ -395,7 +398,15 @@ std::vector<songWindow> runSongWindowAnalysis(const std::vector<Note>& originalN
         if (!std::isfinite(tick) || tick < 0.0 || tick > songLength)
             throw std::out_of_range("Classified note onset is outside the song timeline");
 
-        return static_cast<std::size_t>(tick / windowSize);
+        // The final window includes the song endpoint; intermediate windows
+        // remain half-open [startTick, endTick).
+        if (tick == songLength)
+            return windows.size() - 1;
+
+        return std::min(
+            static_cast<std::size_t>(tick / windowSize),
+            windows.size() - 1
+        );
     };
 
     for (const auto index : classification.truePositives)
