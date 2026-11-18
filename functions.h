@@ -115,7 +115,7 @@ struct SongWindowSummary
 // Window span uses the later MIDI endpoint, including reference notes after the original.
 double getSongLength(const juce::MidiFile& midiFile, const juce::MidiFile& benchmarkMidiFile);
 
-// Conservation check: every classified TP/FP/FN must appear in exactly one window.
+// Count reconciliation: window TP/FP/FN sums must equal classification totals.
 bool windowCountsMatch(const std::vector<songWindow>& windows, const SongResult& classification);
 
 // Fixed number of equally sized tick windows. Caller must validate matching PPQ.
