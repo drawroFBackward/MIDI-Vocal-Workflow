@@ -56,13 +56,14 @@ int wmain(int argc, wchar_t* argv[])
             report.addResult(result);
             std::vector<songWindow> windows = runSongWindowAnalysis(originalNotes, benchmarkNotes, selectedIndices, 20, getSongLength(originalMidiFile, benchmarkMidiFile));
             SongWindowSummary summary = summarizeSongWindows(windows);
+            std::cout << "Song: " << originalMidiFilePath << "\n";
             std::cout << "Vocal windows: " << summary.vocalWindowCount << "\n";
             std::cout << "Non-vocal windows: " << summary.nonVocalWindowCount << "\n";
             std::cout << "FP in vocal windows: " << summary.vocalFP << "\n";
             std::cout << "FP in non-vocal windows: " << summary.nonVocalFP << "\n";
             printSongWindowAnalysis(windows);
         }
-        //report.printReport();
+        report.printReport();
         
     }
     catch (const std::exception& e)
