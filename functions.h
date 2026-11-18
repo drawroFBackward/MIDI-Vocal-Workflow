@@ -92,6 +92,17 @@ bool windowCountsMatch(const std::vector<songWindow>& windows, const SongResult&
 
 std::vector<songWindow> runSongWindowAnalysis(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<size_t>& selectedIndices, int numberOfWindows, double songLength);
 
+// Aggregated, reference-onset-based window diagnostics (independent of printing).
+struct SongWindowSummary
+{
+    std::size_t vocalWindowCount = 0;
+    std::size_t nonVocalWindowCount = 0;
+    int vocalFP = 0;
+    int nonVocalFP = 0;
+};
+
+SongWindowSummary summarizeSongWindows(const std::vector<songWindow>& windows);
+
 double percentageFPinVocalWindows(const std::vector<songWindow>& windows);
 
 double averageFPperWindow(const std::vector<songWindow>& windows, bool Vocal = true);
