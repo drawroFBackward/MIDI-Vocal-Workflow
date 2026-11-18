@@ -44,6 +44,8 @@ int main() {
     songResultClassificationTest AD;
     // Day 11 time-window validation and counting
     songWindowAnalysisTest AE;
+    // Day 11 category summaries and zero-FP reporting
+    songWindowSummaryTest AF;
 
     // run all tests
     juce::UnitTestRunner runner;
