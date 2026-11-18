@@ -1105,3 +1105,132 @@ void songWindowAnalysisTest::runTest()
         expect(!windowCountsMatch(windows, classification));
     });
 }
+
+
+void songWindowSummaryTest::runTest()
+{
+    testCase("Example distribution: count both categories, FP totals, percentages, and averages", [&] {
+        std::vector<songWindow> windows = {
+            songWindow(0.0, 100.0),
+            songWindow(100.0, 200.0),
+            songWindow(200.0, 300.0),
+            songWindow(300.0, 400.0)
+        };
+        windows[0].FP = 10;                   // no reference onset
+        windows[1].TP = 4; windows[1].FP = 3; // reference-active
+        windows[2].FP = 5;                    // no reference onset
+        windows[3].FN = 1; windows[3].FP = 2; // reference-active, even with TP=0
+
+        const SongWindowSummary summary = summarizeSongWindows(windows);
+        expectEquals(static_cast<int>(summary.vocalWindowCount), 2);
+        expectEquals(static_cast<int>(summary.nonVocalWindowCount), 2);
+        expectEquals(summary.vocalFP, 5);
+        expectEquals(summary.nonVocalFP, 15);
+        expectWithinAbsoluteError(percentageFPinVocalWindows(windows), 25.0, 1.0e-9);
+        expectWithinAbsoluteError(averageFPperWindow(windows, true), 2.5, 1.0e-9);
+        expectWithinAbsoluteError(averageFPperWindow(windows, false), 7.5, 1.0e-9);
+
+        std::string output;
+        {
+            ScopedCoutCapture capture;
+            printSongWindowAnalysis(windows);
+            output = capture.str();
+        }
+        expect(output.find("Total vocal windows: 2") != std::string::npos);
+        expect(output.find("Total non-vocal windows: 2") != std::string::npos);
+        expect(output.find("Total FP in vocal windows: 5") != std::string::npos);
+        expect(output.find("Total FP in non-vocal windows: 15") != std::string::npos);
+        expect(output.find("Percentage of false positives in vocal windows: 25%") != std::string::npos);
+        expect(output.find("Percentage of false positives in non-vocal windows: 75%") != std::string::npos);
+        expect(output.find("Average false positives per vocal window: 2.5") != std::string::npos);
+        expect(output.find("Average false positives per non-vocal window: 7.5") != std::string::npos);
+    });
+
+    testCase("Reference activity is derived from TP or FN, not cached", [&] {
+        songWindow window(0.0, 100.0);
+        expect(!window.isVocal());
+        window.FN = 1;
+        expect(window.isVocal());
+        window.FN = 0;
+        window.TP = 1;
+        expect(window.isVocal());
+        window.TP = 0;
+        expect(!window.isVocal());
+    });
+
+    testCase("No false positives: both percentages print N/A", [&] {
+        std::vector<songWindow> windows = {
+            songWindow(0.0, 100.0),
+            songWindow(100.0, 200.0)
+        };
+        windows[0].TP = 1;
+
+        const auto summary = summarizeSongWindows(windows);
+        expectEquals(summary.vocalFP, 0);
+        expectEquals(summary.nonVocalFP, 0);
+        expectEquals(static_cast<int>(summary.vocalWindowCount), 1);
+        expectEquals(static_cast<int>(summary.nonVocalWindowCount), 1);
+        expectEquals(percentageFPinVocalWindows(windows), 0.0);
+        expectEquals(averageFPperWindow(windows, true), 0.0);
+        expectEquals(averageFPperWindow(windows, false), 0.0);
+
+        std::string output;
+        {
+            ScopedCoutCapture capture;
+            printSongWindowAnalysis(windows);
+            output = capture.str();
+        }
+        expect(output.find("Percentage of false positives in vocal windows: N/A") != std::string::npos);
+        expect(output.find("Percentage of false positives in non-vocal windows: N/A") != std::string::npos);
+        expect(output.find("Percentage of false positives in non-vocal windows: 100%") == std::string::npos);
+    });
+
+    testCase("All false positives outside reference-onset windows", [&] {
+        std::vector<songWindow> windows = {
+            songWindow(0.0, 100.0),
+            songWindow(100.0, 200.0)
+        };
+        windows[0].FP = 4;
+        windows[1].FP = 6;
+
+        const auto summary = summarizeSongWindows(windows);
+        expectEquals(static_cast<int>(summary.vocalWindowCount), 0);
+        expectEquals(static_cast<int>(summary.nonVocalWindowCount), 2);
+        expectEquals(summary.vocalFP, 0);
+        expectEquals(summary.nonVocalFP, 10);
+        expectEquals(percentageFPinVocalWindows(windows), 0.0);
+        expectEquals(averageFPperWindow(windows, true), 0.0);
+        expectEquals(averageFPperWindow(windows, false), 5.0);
+
+        std::string output;
+        {
+            ScopedCoutCapture capture;
+            printSongWindowAnalysis(windows);
+            output = capture.str();
+        }
+        expect(output.find("Percentage of false positives in vocal windows: 0%") != std::string::npos);
+        expect(output.find("Percentage of false positives in non-vocal windows: 100%") != std::string::npos);
+    });
+
+    testCase("Empty window vector: zero counts and safe reporting", [&] {
+        const std::vector<songWindow> windows;
+        const auto summary = summarizeSongWindows(windows);
+        expectEquals(static_cast<int>(summary.vocalWindowCount), 0);
+        expectEquals(static_cast<int>(summary.nonVocalWindowCount), 0);
+        expectEquals(summary.vocalFP, 0);
+        expectEquals(summary.nonVocalFP, 0);
+        expectEquals(percentageFPinVocalWindows(windows), 0.0);
+        expectEquals(averageFPperWindow(windows, true), 0.0);
+        expectEquals(averageFPperWindow(windows, false), 0.0);
+
+        std::string output;
+        {
+            ScopedCoutCapture capture;
+            printSongWindowAnalysis(windows);
+            output = capture.str();
+        }
+        expect(output.find("Total vocal windows: 0") != std::string::npos);
+        expect(output.find("Total non-vocal windows: 0") != std::string::npos);
+        expect(output.find("Percentage of false positives in vocal windows: N/A") != std::string::npos);
+    });
+}
