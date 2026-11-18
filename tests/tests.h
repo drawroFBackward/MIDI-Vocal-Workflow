@@ -220,3 +220,29 @@ public:
     runBenchmarkPPQTest() : juce::UnitTest("Run Benchmark PPQ Test") {}
     void runTest() override;
 };
+
+// Day 11: classification returns original indices for TP/FP and reference indices for FN.
+class songResultClassificationTest : public juce::UnitTest
+{
+public:
+    songResultClassificationTest() : juce::UnitTest("Song Result Classification Test") {}
+    void runTest() override;
+};
+
+
+// Day 11: fixed-count temporal windows, endpoint handling, and count invariants.
+class songWindowAnalysisTest : public juce::UnitTest
+{
+public:
+    songWindowAnalysisTest() : juce::UnitTest("Song Window Analysis Test") {}
+    void runTest() override;
+};
+
+
+// Day 11: reference-onset category summaries and zero-FP reporting.
+class songWindowSummaryTest : public juce::UnitTest
+{
+public:
+    songWindowSummaryTest() : juce::UnitTest("Song Window Summary Test") {}
+    void runTest() override;
+};

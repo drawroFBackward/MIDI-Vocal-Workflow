@@ -40,6 +40,12 @@ int main() {
     benchmarkPrintReportTest AB;
     // runBenchmark PPQ compatibility tests
     runBenchmarkPPQTest AC;
+    // Day 11 classification tests
+    songResultClassificationTest AD;
+    // Day 11 time-window validation and counting
+    songWindowAnalysisTest AE;
+    // Day 11 category summaries and zero-FP reporting
+    songWindowSummaryTest AF;
 
     // run all tests
     juce::UnitTestRunner runner;

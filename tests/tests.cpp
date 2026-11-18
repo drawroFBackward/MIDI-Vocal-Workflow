@@ -1,5 +1,6 @@
 #include "tests.h"
 #include <sstream>
+#include <limits>
 
 namespace
 {
@@ -805,5 +806,431 @@ void runBenchmarkPPQTest::runTest()
         }
 
         expect(rejectedMismatch, "Mismatched PPQ must throw std::runtime_error");
+    });
+}
+
+
+void songResultClassificationTest::runTest()
+{
+    testCase("Classify selected notes and preserve original/reference index spaces", [&] {
+        // The second note duplicates the first; note 2 is intentionally unselected.
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(60, 80, 1, 2, 0.0, 240.0),
+            Note(64, 80, 0, 1, 480.0, 480.0),
+            Note(67, 80, 0, 1, 960.0, 480.0)
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(64, 80, 0, 1, 480.0, 480.0)
+        };
+        const std::vector<std::size_t> selected = {0, 1, 3};
+
+        const SongResult result = runEvaluation(original, reference, selected);
+
+        // TP and FP refer to original indices; FN refers to reference indices.
+        expect(result.truePositives == std::vector<std::size_t>{0});
+        expect(result.falsePositives == std::vector<std::size_t>{1, 3});
+        expect(result.falseNegatives == std::vector<std::size_t>{1});
+        expectEquals(static_cast<int>(result.truePositives.size() + result.falsePositives.size()),
+                     static_cast<int>(selected.size()));
+        expectEquals(static_cast<int>(result.truePositives.size() + result.falseNegatives.size()),
+                     static_cast<int>(reference.size()));
+    });
+
+    testCase("Consume duplicate reference notes at most once each", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 100.0),
+            Note(60, 80, 0, 1, 0.0, 100.0),
+            Note(60, 80, 0, 1, 0.0, 100.0)
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 100.0),
+            Note(60, 80, 0, 1, 0.0, 100.0)
+        };
+        const std::vector<std::size_t> selected = {0, 1, 2};
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        expect(result.truePositives == std::vector<std::size_t>{0, 1});
+        expect(result.falsePositives == std::vector<std::size_t>{2});
+        expect(result.falseNegatives.empty());
+        expectEquals(truePositiveNotes(original, reference, selected), 2);
+    });
+
+    testCase("Unselected original notes do not count as false positives", [&] {
+        const std::vector<Note> original = {
+            Note(72, 80, 0, 1, 0.0, 120.0),
+            Note(55, 80, 0, 1, 480.0, 120.0)
+        };
+        const std::vector<Note> reference = {
+            Note(72, 80, 0, 1, 0.0, 120.0),
+            Note(55, 80, 0, 1, 480.0, 120.0)
+        };
+        const std::vector<std::size_t> selected = {0};
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        expect(result.truePositives == std::vector<std::size_t>{0});
+        expect(result.falsePositives.empty());
+        expect(result.falseNegatives == std::vector<std::size_t>{1});
+    });
+
+    testCase("No selected notes means all reference notes are false negatives", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 120.0)
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 120.0),
+            Note(62, 80, 0, 1, 480.0, 120.0)
+        };
+        const std::vector<std::size_t> selected;
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        expect(result.truePositives.empty());
+        expect(result.falsePositives.empty());
+        expect(result.falseNegatives == std::vector<std::size_t>{0, 1});
+    });
+
+    testCase("Empty reference means all selected notes are false positives", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 120.0),
+            Note(50, 80, 0, 1, 240.0, 120.0),
+            Note(62, 80, 0, 1, 480.0, 120.0)
+        };
+        const std::vector<Note> reference;
+        const std::vector<std::size_t> selected = {0, 2};
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        expect(result.truePositives.empty());
+        expect(result.falsePositives == std::vector<std::size_t>{0, 2});
+        expect(result.falseNegatives.empty());
+    });
+
+    testCase("Empty inputs yield empty classifications", [&] {
+        const std::vector<Note> original;
+        const std::vector<Note> reference;
+        const std::vector<std::size_t> selected;
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        expect(result.truePositives.empty());
+        expect(result.falsePositives.empty());
+        expect(result.falseNegatives.empty());
+    });
+
+    testCase("Match requires pitch and onset but not track, channel or duration", [&] {
+        const std::vector<Note> original = {
+            Note(65, 90, 4, 5, 480.0, 200.0),
+            Note(65, 90, 4, 5, 481.0, 200.0),
+            Note(66, 90, 4, 5, 480.0, 200.0)
+        };
+        const std::vector<Note> reference = {
+            Note(65, 50, 0, 1, 480.0, 100.0)
+        };
+        const std::vector<std::size_t> selected = {0, 1, 2};
+
+        expect(noteMatches(original[0], reference[0]));
+        expect(!noteMatches(original[1], reference[0])); // onset differs
+        expect(!noteMatches(original[2], reference[0])); // pitch differs
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        expect(result.truePositives == std::vector<std::size_t>{0});
+        expect(result.falsePositives == std::vector<std::size_t>{1, 2});
+        expect(result.falseNegatives.empty());
+    });
+
+    testCase("Classification agrees with existing benchmark counts and is nonmutating", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(62, 80, 0, 1, 480.0, 480.0),
+            Note(65, 80, 0, 1, 960.0, 480.0)
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 480.0),
+            Note(64, 80, 0, 1, 480.0, 480.0)
+        };
+        const std::vector<std::size_t> selected = {0, 2};
+
+        const SongResult result = runEvaluation(original, reference, selected);
+        const BenchmarkResult metrics = evaluate(original, reference, selected, "unchanged");
+        expectEquals(metrics.TP, static_cast<int>(result.truePositives.size()));
+        expectEquals(metrics.FP, static_cast<int>(result.falsePositives.size()));
+        expectEquals(metrics.FN, static_cast<int>(result.falseNegatives.size()));
+        expectEquals(metrics.TP, 1);
+        expectEquals(metrics.FP, 1);
+        expectEquals(metrics.FN, 1);
+
+        // Re-running classification must preserve both the indices and note data.
+        const SongResult again = runEvaluation(original, reference, selected);
+        expect(again.truePositives == result.truePositives);
+        expect(again.falsePositives == result.falsePositives);
+        expect(again.falseNegatives == result.falseNegatives);
+        expect(selected == std::vector<std::size_t>{0, 2});
+        expectEquals(original[0].pitch, 60);
+        expectEquals(original[2].startTick, 960.0);
+        expectEquals(reference[1].pitch, 64);
+    });
+}
+
+
+void songWindowAnalysisTest::runTest()
+{
+    testCase("Fixed-count windows classify notes once, including the exact final endpoint", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 1.0),  // TP: window 0
+            Note(61, 80, 0, 1, 3.0, 1.0),  // FP: window 1
+            Note(62, 80, 0, 1, 5.0, 1.0),  // FP: window 2
+            Note(63, 80, 0, 1, 10.0, 0.0)  // FP: final window, at endpoint
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 1.0),
+            Note(70, 80, 0, 1, 6.0, 1.0),  // FN: window 3 (boundary)
+            Note(71, 80, 0, 1, 10.0, 0.0)  // FN: final window, at endpoint
+        };
+        const std::vector<std::size_t> selected = {0, 1, 2, 3};
+        const SongResult classification = runEvaluation(original, reference, selected);
+        const auto windows = runSongWindowAnalysis(original, reference, selected, 5, 10.0);
+
+        expectEquals(static_cast<int>(windows.size()), 5);
+        expectEquals(windows[0].startTick, 0.0);
+        expectEquals(windows[0].endTick, 2.0);
+        expectEquals(windows[4].startTick, 8.0);
+        expectEquals(windows[4].endTick, 10.0);
+
+        expectEquals(windows[0].TP, 1);
+        expectEquals(windows[0].FP, 0);
+        expectEquals(windows[0].FN, 0);
+        expectEquals(windows[1].TP, 0);
+        expectEquals(windows[1].FP, 1);
+        expectEquals(windows[1].FN, 0);
+        expectEquals(windows[2].TP, 0);
+        expectEquals(windows[2].FP, 1);
+        expectEquals(windows[2].FN, 0);
+        expectEquals(windows[3].TP, 0);
+        expectEquals(windows[3].FP, 0);
+        expectEquals(windows[3].FN, 1);
+        expectEquals(windows[4].TP, 0);
+        expectEquals(windows[4].FP, 1);
+        expectEquals(windows[4].FN, 1);
+
+        expect(windowCountsMatch(windows, classification));
+    });
+
+    testCase("False negatives beyond original MIDI's timeline are counted", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 100.0)
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 100.0),
+            Note(65, 80, 0, 1, 1200.0, 100.0)
+        };
+        const std::vector<std::size_t> selected = {0};
+        const auto windows = runSongWindowAnalysis(original, reference, selected, 4, 1300.0);
+
+        expectEquals(static_cast<int>(windows.size()), 4);
+        expectEquals(windows[0].TP, 1);
+        expectEquals(windows[3].FN, 1);
+        expect(windowCountsMatch(windows, runEvaluation(original, reference, selected)));
+    });
+
+    testCase("All-empty notes can still produce zero-count windows with valid song length", [&] {
+        const std::vector<Note> original;
+        const std::vector<Note> reference;
+        const std::vector<std::size_t> selected;
+        const auto windows = runSongWindowAnalysis(original, reference, selected, 3, 120.0);
+
+        expectEquals(static_cast<int>(windows.size()), 3);
+        for (const auto& window : windows)
+        {
+            expectEquals(window.TP, 0);
+            expectEquals(window.FP, 0);
+            expectEquals(window.FN, 0);
+        }
+        expect(windowCountsMatch(windows, runEvaluation(original, reference, selected)));
+    });
+
+    testCase("Zero, negative, and non-finite song lengths are rejected", [&] {
+        const std::vector<Note> original;
+        const std::vector<Note> reference;
+        const std::vector<std::size_t> selected;
+
+        expectThrowsType(runSongWindowAnalysis(original, reference, selected, 4, 0.0), std::invalid_argument);
+        expectThrowsType(runSongWindowAnalysis(original, reference, selected, 4, -1.0), std::invalid_argument);
+        expectThrowsType(runSongWindowAnalysis(original, reference, selected, 4,
+                         std::numeric_limits<double>::infinity()), std::invalid_argument);
+    });
+
+    testCase("Non-positive window counts are rejected", [&] {
+        const std::vector<Note> original;
+        const std::vector<Note> reference;
+        const std::vector<std::size_t> selected;
+
+        expectThrowsType(runSongWindowAnalysis(original, reference, selected, 0, 120.0), std::invalid_argument);
+        expectThrowsType(runSongWindowAnalysis(original, reference, selected, -2, 120.0), std::invalid_argument);
+    });
+
+    testCase("Invalid note onsets never silently disappear", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 121.0, 1.0)
+        };
+        const std::vector<Note> reference;
+        const std::vector<std::size_t> selected = {0};
+
+        expectThrowsType(runSongWindowAnalysis(original, reference, selected, 4, 120.0), std::out_of_range);
+
+        const std::vector<Note> negativeOnset = {
+            Note(60, 80, 0, 1, -1.0, 1.0)
+        };
+        expectThrowsType(runSongWindowAnalysis(negativeOnset, reference, selected, 4, 120.0),
+                         std::out_of_range);
+    });
+
+    testCase("Count consistency helper detects mismatched or negative counts", [&] {
+        const std::vector<Note> original = {
+            Note(60, 80, 0, 1, 0.0, 1.0),
+            Note(62, 80, 0, 1, 200.0, 1.0)
+        };
+        const std::vector<Note> reference = {
+            Note(60, 80, 0, 1, 0.0, 1.0),
+            Note(70, 80, 0, 1, 300.0, 1.0)
+        };
+        const std::vector<std::size_t> selected = {0, 1};
+        const SongResult classification = runEvaluation(original, reference, selected);
+        auto windows = runSongWindowAnalysis(original, reference, selected, 4, 400.0);
+        expect(windowCountsMatch(windows, classification));
+
+        ++windows[0].FP;
+        expect(!windowCountsMatch(windows, classification));
+        --windows[0].FP;
+
+        windows[0].TP = -1;
+        expect(!windowCountsMatch(windows, classification));
+    });
+}
+
+
+void songWindowSummaryTest::runTest()
+{
+    testCase("Example distribution: count both categories, FP totals, percentages, and averages", [&] {
+        std::vector<songWindow> windows = {
+            songWindow(0.0, 100.0),
+            songWindow(100.0, 200.0),
+            songWindow(200.0, 300.0),
+            songWindow(300.0, 400.0)
+        };
+        windows[0].FP = 10;                   // no reference onset
+        windows[1].TP = 4; windows[1].FP = 3; // reference-active
+        windows[2].FP = 5;                    // no reference onset
+        windows[3].FN = 1; windows[3].FP = 2; // reference-active, even with TP=0
+
+        const SongWindowSummary summary = summarizeSongWindows(windows);
+        expectEquals(static_cast<int>(summary.vocalWindowCount), 2);
+        expectEquals(static_cast<int>(summary.nonVocalWindowCount), 2);
+        expectEquals(summary.vocalFP, 5);
+        expectEquals(summary.nonVocalFP, 15);
+        expectWithinAbsoluteError(percentageFPinVocalWindows(windows), 25.0, 1.0e-9);
+        expectWithinAbsoluteError(averageFPperWindow(windows, true), 2.5, 1.0e-9);
+        expectWithinAbsoluteError(averageFPperWindow(windows, false), 7.5, 1.0e-9);
+
+        std::string output;
+        {
+            ScopedCoutCapture capture;
+            printSongWindowAnalysis(windows);
+            output = capture.str();
+        }
+        expect(output.find("Total vocal windows: 2") != std::string::npos);
+        expect(output.find("Total non-vocal windows: 2") != std::string::npos);
+        expect(output.find("Total FP in vocal windows: 5") != std::string::npos);
+        expect(output.find("Total FP in non-vocal windows: 15") != std::string::npos);
+        expect(output.find("Percentage of false positives in vocal windows: 25%") != std::string::npos);
+        expect(output.find("Percentage of false positives in non-vocal windows: 75%") != std::string::npos);
+        expect(output.find("Average false positives per vocal window: 2.5") != std::string::npos);
+        expect(output.find("Average false positives per non-vocal window: 7.5") != std::string::npos);
+    });
+
+    testCase("Reference activity is derived from TP or FN, not cached", [&] {
+        songWindow window(0.0, 100.0);
+        expect(!window.isVocal());
+        window.FN = 1;
+        expect(window.isVocal());
+        window.FN = 0;
+        window.TP = 1;
+        expect(window.isVocal());
+        window.TP = 0;
+        expect(!window.isVocal());
+    });
+
+    testCase("No false positives: both percentages print N/A", [&] {
+        std::vector<songWindow> windows = {
+            songWindow(0.0, 100.0),
+            songWindow(100.0, 200.0)
+        };
+        windows[0].TP = 1;
+
+        const auto summary = summarizeSongWindows(windows);
+        expectEquals(summary.vocalFP, 0);
+        expectEquals(summary.nonVocalFP, 0);
+        expectEquals(static_cast<int>(summary.vocalWindowCount), 1);
+        expectEquals(static_cast<int>(summary.nonVocalWindowCount), 1);
+        expectEquals(percentageFPinVocalWindows(windows), 0.0);
+        expectEquals(averageFPperWindow(windows, true), 0.0);
+        expectEquals(averageFPperWindow(windows, false), 0.0);
+
+        std::string output;
+        {
+            ScopedCoutCapture capture;
+            printSongWindowAnalysis(windows);
+            output = capture.str();
+        }
+        expect(output.find("Percentage of false positives in vocal windows: N/A") != std::string::npos);
+        expect(output.find("Percentage of false positives in non-vocal windows: N/A") != std::string::npos);
+        expect(output.find("Percentage of false positives in non-vocal windows: 100%") == std::string::npos);
+    });
+
+    testCase("All false positives outside reference-onset windows", [&] {
+        std::vector<songWindow> windows = {
+            songWindow(0.0, 100.0),
+            songWindow(100.0, 200.0)
+        };
+        windows[0].FP = 4;
+        windows[1].FP = 6;
+
+        const auto summary = summarizeSongWindows(windows);
+        expectEquals(static_cast<int>(summary.vocalWindowCount), 0);
+        expectEquals(static_cast<int>(summary.nonVocalWindowCount), 2);
+        expectEquals(summary.vocalFP, 0);
+        expectEquals(summary.nonVocalFP, 10);
+        expectEquals(percentageFPinVocalWindows(windows), 0.0);
+        expectEquals(averageFPperWindow(windows, true), 0.0);
+        expectEquals(averageFPperWindow(windows, false), 5.0);
+
+        std::string output;
+        {
+            ScopedCoutCapture capture;
+            printSongWindowAnalysis(windows);
+            output = capture.str();
+        }
+        expect(output.find("Percentage of false positives in vocal windows: 0%") != std::string::npos);
+        expect(output.find("Percentage of false positives in non-vocal windows: 100%") != std::string::npos);
+    });
+
+    testCase("Empty window vector: zero counts and safe reporting", [&] {
+        const std::vector<songWindow> windows;
+        const auto summary = summarizeSongWindows(windows);
+        expectEquals(static_cast<int>(summary.vocalWindowCount), 0);
+        expectEquals(static_cast<int>(summary.nonVocalWindowCount), 0);
+        expectEquals(summary.vocalFP, 0);
+        expectEquals(summary.nonVocalFP, 0);
+        expectEquals(percentageFPinVocalWindows(windows), 0.0);
+        expectEquals(averageFPperWindow(windows, true), 0.0);
+        expectEquals(averageFPperWindow(windows, false), 0.0);
+
+        std::string output;
+        {
+            ScopedCoutCapture capture;
+            printSongWindowAnalysis(windows);
+            output = capture.str();
+        }
+        expect(output.find("Total vocal windows: 0") != std::string::npos);
+        expect(output.find("Total non-vocal windows: 0") != std::string::npos);
+        expect(output.find("Percentage of false positives in vocal windows: N/A") != std::string::npos);
     });
 }
