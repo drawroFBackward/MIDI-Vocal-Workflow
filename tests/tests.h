@@ -237,3 +237,12 @@ public:
     songWindowAnalysisTest() : juce::UnitTest("Song Window Analysis Test") {}
     void runTest() override;
 };
+
+
+// Day 11: reference-onset category summaries and zero-FP reporting.
+class songWindowSummaryTest : public juce::UnitTest
+{
+public:
+    songWindowSummaryTest() : juce::UnitTest("Song Window Summary Test") {}
+    void runTest() override;
+};
