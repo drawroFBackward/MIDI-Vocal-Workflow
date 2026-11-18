@@ -1,5 +1,9 @@
 #include "functions.h"
 
+// -----------------------------------------------------------------------------
+// MIDI file access and conversion
+// -----------------------------------------------------------------------------
+
 juce::File filePath(const juce::String& path)
 {
     juce::File midiPath(path);
@@ -68,6 +72,51 @@ std::vector<Note> extractNotes(const juce::MidiFile& midiFile)
     return notes;
 }
 
+juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, const juce::MidiFile& reference)
+{
+    int ppq = reference.getTimeFormat();
+    if (ppq <= 0)
+        throw std::invalid_argument("PPQ must be positive");
+    juce::MidiFile midiFile;
+    midiFile.setTicksPerQuarterNote(ppq);
+    juce::MidiMessageSequence sequence;
+    reference.findAllKeySigEvents(sequence);
+    reference.findAllTempoEvents(sequence);
+    reference.findAllTimeSigEvents(sequence);
+    for (const auto& note : notes)
+    {
+        if (!note.isComplete){
+            throw std::runtime_error("Incomplete note encountered");
+        }
+        if ((note.startTick != std::floor(note.startTick)) || (note.duration != std::floor(note.duration)) || (note.startTick < 0) || (note.duration < 0) || !std::isfinite(note.startTick) || !std::isfinite(note.duration))
+            throw std::runtime_error("Note startTick and duration must be whole numbers and non-negative");
+        sequence.addEvent(juce::MidiMessage::noteOn(note.channel, note.pitch, static_cast<juce::uint8>(note.velocity)), note.startTick);
+        sequence.addEvent(juce::MidiMessage::noteOff(note.channel, note.pitch), note.startTick + note.duration);
+    }
+
+    sequence.sort();
+
+    midiFile.addTrack(sequence);
+
+    return midiFile;
+}
+
+void exportMidiFile(const juce::MidiFile& midiFile, const juce::String& path)
+{
+    juce::File file(path);
+    juce::FileOutputStream outputStream(file);
+    if (!outputStream.openedOk())
+        throw std::runtime_error("Failed to open output file");
+    outputStream.setPosition(0);
+    outputStream.truncate();
+    if (!midiFile.writeTo(outputStream))
+        throw std::runtime_error("Failed to write MIDI file");
+}
+
+// -----------------------------------------------------------------------------
+// Vocal-note selection
+// -----------------------------------------------------------------------------
+
 std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPitch)
 {
     std::vector<std::size_t> selectedIndices;
@@ -97,6 +146,10 @@ std::vector<Note> indicesToNotes(const std::vector<Note>& notes, const std::vect
     }
     return selectedNotes;
 }
+
+// -----------------------------------------------------------------------------
+// Reference matching and per-song evaluation
+// -----------------------------------------------------------------------------
 
 bool noteMatches(const Note& note, const Note& benchmarkNote)
 {
@@ -140,47 +193,6 @@ int truePositiveNotes(const std::vector<Note>& originalNotes, const std::vector<
     return count;
 }
 
-juce::MidiFile notesToMidiFile(const std::vector<Note>& notes, const juce::MidiFile& reference)
-{
-    int ppq = reference.getTimeFormat();
-    if (ppq <= 0)
-        throw std::invalid_argument("PPQ must be positive");
-    juce::MidiFile midiFile;
-    midiFile.setTicksPerQuarterNote(ppq);
-    juce::MidiMessageSequence sequence;
-    reference.findAllKeySigEvents(sequence);
-    reference.findAllTempoEvents(sequence);
-    reference.findAllTimeSigEvents(sequence);
-    for (const auto& note : notes)
-    {
-        if (!note.isComplete){
-            throw std::runtime_error("Incomplete note encountered");
-        }
-        if ((note.startTick != std::floor(note.startTick)) || (note.duration != std::floor(note.duration)) || (note.startTick < 0) || (note.duration < 0) || !std::isfinite(note.startTick) || !std::isfinite(note.duration))
-            throw std::runtime_error("Note startTick and duration must be whole numbers and non-negative");
-        sequence.addEvent(juce::MidiMessage::noteOn(note.channel, note.pitch, static_cast<juce::uint8>(note.velocity)), note.startTick);
-        sequence.addEvent(juce::MidiMessage::noteOff(note.channel, note.pitch), note.startTick + note.duration);
-    }
-
-    sequence.sort();
-
-    midiFile.addTrack(sequence);
-
-    return midiFile;
-}
-
-void exportMidiFile(const juce::MidiFile& midiFile, const juce::String& path)
-{
-    juce::File file(path);
-    juce::FileOutputStream outputStream(file);
-    if (!outputStream.openedOk())
-        throw std::runtime_error("Failed to open output file");
-    outputStream.setPosition(0);
-    outputStream.truncate();
-    if (!midiFile.writeTo(outputStream))
-        throw std::runtime_error("Failed to write MIDI file");
-}
-
 BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vector<Note>& benchmarkNotes, const std::vector<std::size_t>& indices, const juce::String& songName)
 {
     SongResult classification = runEvaluation(originalNotes, benchmarkNotes, indices);
@@ -203,31 +215,9 @@ BenchmarkResult evaluate(const std::vector<Note>& originalNotes, const std::vect
     return result;
 }
 
-BenchmarkResult runBenchmark(const juce::String& originalMidiFilePath, const juce::String& benchmarkMidiFilePath)
-{
-    juce::MidiFile originalMidiFile = readMidiFile(originalMidiFilePath);
-    juce::MidiFile benchmarkMidiFile = readMidiFile(benchmarkMidiFilePath);
-    if (originalMidiFile.getTimeFormat() != benchmarkMidiFile.getTimeFormat())
-        throw std::runtime_error(("MIDI files: " + originalMidiFilePath + " and " + benchmarkMidiFilePath + " have different PPQ (time format)").toStdString());
-
-    std::vector<Note> originalNotes = extractNotes(originalMidiFile);
-    std::vector<Note> benchmarkNotes = extractNotes(benchmarkMidiFile);
-
-    std::vector<std::size_t> selectedIndices = selectNotes(originalNotes);
-
-    return evaluate(originalNotes, benchmarkNotes, selectedIndices, originalMidiFilePath);
-}
-
-void runAndExport(const juce::String& originalMidiFilePath)
-{
-    juce::MidiFile originalMidiFile = readMidiFile(originalMidiFilePath);
-    std::vector<Note> originalNotes = extractNotes(originalMidiFile);
-    auto selectedNotes = indicesToNotes(originalNotes, selectNotes(originalNotes));
-    juce::MidiFile outputMidiFile = notesToMidiFile(selectedNotes, originalMidiFile);
-    juce::String outputMidiFilePath = "Vocal_";
-    outputMidiFilePath += juce::File(originalMidiFilePath).getFileName();
-    exportMidiFile(outputMidiFile, outputMidiFilePath);
-}
+// -----------------------------------------------------------------------------
+// Dataset discovery and benchmark reporting
+// -----------------------------------------------------------------------------
 
 std::vector<juce::String> findOriginalMidiFiles(const juce::String& directoryPath)
 {
@@ -274,6 +264,21 @@ std::vector<FilePair> pairFiles(const juce::String& directoryPath)
     if (filePairs.empty())
         throw std::runtime_error("No benchmark files found for the original MIDI files in the directory");
     return filePairs;
+}
+
+BenchmarkResult runBenchmark(const juce::String& originalMidiFilePath, const juce::String& benchmarkMidiFilePath)
+{
+    juce::MidiFile originalMidiFile = readMidiFile(originalMidiFilePath);
+    juce::MidiFile benchmarkMidiFile = readMidiFile(benchmarkMidiFilePath);
+    if (originalMidiFile.getTimeFormat() != benchmarkMidiFile.getTimeFormat())
+        throw std::runtime_error(("MIDI files: " + originalMidiFilePath + " and " + benchmarkMidiFilePath + " have different PPQ (time format)").toStdString());
+
+    std::vector<Note> originalNotes = extractNotes(originalMidiFile);
+    std::vector<Note> benchmarkNotes = extractNotes(benchmarkMidiFile);
+
+    std::vector<std::size_t> selectedIndices = selectNotes(originalNotes);
+
+    return evaluate(originalNotes, benchmarkNotes, selectedIndices, originalMidiFilePath);
 }
 
 void BenchmarkReport::addResult(const BenchmarkResult& result)
@@ -341,7 +346,15 @@ void BenchmarkReport::printReport() const
     std::cout << "Macro Average - Precision: " << macroAverage.precision << ", Recall: " << macroAverage.recall << ", F1: " << macroAverage.f1 << "\n";
 }
 
-// Verify the partition invariant: every classified note must be counted once.
+// -----------------------------------------------------------------------------
+// Time-window error diagnostics (reference-onset based)
+// -----------------------------------------------------------------------------
+
+double getSongLength(const juce::MidiFile& midiFile, const juce::MidiFile& benchmarkMidiFile)
+{
+    return std::max(midiFile.getLastTimestamp(), benchmarkMidiFile.getLastTimestamp());
+}
+
 bool windowCountsMatch(const std::vector<songWindow>& windows, const SongResult& classification)
 {
     std::size_t tpCount = 0;
@@ -361,11 +374,6 @@ bool windowCountsMatch(const std::vector<songWindow>& windows, const SongResult&
     return tpCount == classification.truePositives.size()
         && fpCount == classification.falsePositives.size()
         && fnCount == classification.falseNegatives.size();
-}
-
-double getSongLength(const juce::MidiFile& midiFile, const juce::MidiFile& benchmarkMidiFile)
-{
-    return std::max(midiFile.getLastTimestamp(), benchmarkMidiFile.getLastTimestamp());
 }
 
 std::vector<songWindow> runSongWindowAnalysis(const std::vector<Note>& originalNotes,
@@ -502,4 +510,19 @@ void printSongWindowAnalysis(const std::vector<songWindow>& windows)
         ? static_cast<double>(summary.nonVocalFP) / summary.nonVocalWindowCount : 0.0;
     std::cout << "Average false positives per vocal window: " << vocalAverage << "\n";
     std::cout << "Average false positives per non-vocal window: " << nonVocalAverage << "\n";
+}
+
+// -----------------------------------------------------------------------------
+// Single-file vocal-note export workflow
+// -----------------------------------------------------------------------------
+
+void runAndExport(const juce::String& originalMidiFilePath)
+{
+    juce::MidiFile originalMidiFile = readMidiFile(originalMidiFilePath);
+    std::vector<Note> originalNotes = extractNotes(originalMidiFile);
+    auto selectedNotes = indicesToNotes(originalNotes, selectNotes(originalNotes));
+    juce::MidiFile outputMidiFile = notesToMidiFile(selectedNotes, originalMidiFile);
+    juce::String outputMidiFilePath = "Vocal_";
+    outputMidiFilePath += juce::File(originalMidiFilePath).getFileName();
+    exportMidiFile(outputMidiFile, outputMidiFilePath);
 }
