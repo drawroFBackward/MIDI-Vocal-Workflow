@@ -424,43 +424,47 @@ std::vector<songWindow> runSongWindowAnalysis(const std::vector<Note>& originalN
     return windows;
 }
 
-double percentageFPinVocalWindows(const std::vector<songWindow>& windows)
+SongWindowSummary summarizeSongWindows(const std::vector<songWindow>& windows)
 {
-    int totalFP = 0;
-    int vocalFP = 0;
+    SongWindowSummary summary;
     for (const auto& window : windows)
     {
-        totalFP += window.FP;
         if (window.isVocal())
-            vocalFP += window.FP;
+        {
+            ++summary.vocalWindowCount;
+            summary.vocalFP += window.FP;
+        }
+        else
+        {
+            ++summary.nonVocalWindowCount;
+            summary.nonVocalFP += window.FP;
+        }
     }
-    return (totalFP > 0) ? 100*static_cast<double>(vocalFP) / totalFP : 0.0;
+    return summary;
 }
 
-// percentage of false positives in non-vocal windows = 100 - %FP in vocal windows
+double percentageFPinVocalWindows(const std::vector<songWindow>& windows)
+{
+    const SongWindowSummary summary = summarizeSongWindows(windows);
+    const int totalFP = summary.vocalFP + summary.nonVocalFP;
+    // For calculations, use 0 when there are no FPs; printed reports show N/A.
+    return (totalFP > 0) ? 100.0 * summary.vocalFP / totalFP : 0.0;
+}
 
 double averageFPperWindow(const std::vector<songWindow>& windows, bool Vocal)
 {
-    int totalFP = 0;
-    int count = 0;
-    for (const auto& window : windows)
-    {
-        if (Vocal == window.isVocal())
-        {
-            totalFP += window.FP;
-            ++count;
-        }
-    }
+    const SongWindowSummary summary = summarizeSongWindows(windows);
+    const std::size_t count = Vocal ? summary.vocalWindowCount : summary.nonVocalWindowCount;
+    const int totalFP = Vocal ? summary.vocalFP : summary.nonVocalFP;
     return (count > 0) ? static_cast<double>(totalFP) / count : 0.0;
 }
 
 void printSongWindowAnalysis(const std::vector<songWindow>& windows)
 {
+    const SongWindowSummary summary = summarizeSongWindows(windows);
+
     std::cout << "Song Window Analysis:\n";
     std::cout << "Index\tStart\tEnd\tTP\tFP\tFN\tVocal\n";
-    int totalVocalWindows = 0;
-    int totalVocalFP = 0;
-    int totalNonVocalFP = 0;
     for (std::size_t i = 0; i < windows.size(); ++i)
     {
         const auto& window = windows[i];
@@ -471,24 +475,31 @@ void printSongWindowAnalysis(const std::vector<songWindow>& windows)
                   << window.FP << "\t"
                   << window.FN << "\t"
                   << (window.isVocal() ? "Yes" : "No") << "\n";
-        if (window.isVocal())
-        {
-            ++totalVocalWindows;
-            totalVocalFP += window.FP;
-        }
-        else
-        {
-            totalNonVocalFP += window.FP;
-        }
     }
-    std::cout << "Total vocal windows: " << totalVocalWindows << "\n";
-    std::cout << "Total FP in vocal windows: " << totalVocalFP << "\n";
-    std::cout << "Total non-vocal windows: " << (windows.size() - totalVocalWindows) << "\n";
-    std::cout << "Total FP in non-vocal windows: " << totalNonVocalFP << "\n";
 
-    double percentageFPVocal = percentageFPinVocalWindows(windows);
-    std::cout << "Percentage of false positives in vocal windows: " << percentageFPVocal << "%\n";
-    std::cout << "Percentage of false positives in non-vocal windows: " << (percentageFPVocal == 100 ? 0 : 100 - percentageFPVocal) << "%\n";
-    std::cout << "Average false positives per vocal window: " << averageFPperWindow(windows, true) << "\n";
-    std::cout << "Average false positives per non-vocal window: " << averageFPperWindow(windows, false) << "\n";
+    std::cout << "Total vocal windows: " << summary.vocalWindowCount << "\n";
+    std::cout << "Total FP in vocal windows: " << summary.vocalFP << "\n";
+    std::cout << "Total non-vocal windows: " << summary.nonVocalWindowCount << "\n";
+    std::cout << "Total FP in non-vocal windows: " << summary.nonVocalFP << "\n";
+
+    const int totalFP = summary.vocalFP + summary.nonVocalFP;
+    if (totalFP == 0)
+    {
+        std::cout << "Percentage of false positives in vocal windows: N/A (no false positives)\n";
+        std::cout << "Percentage of false positives in non-vocal windows: N/A (no false positives)\n";
+    }
+    else
+    {
+        const double vocalPercentage = 100.0 * summary.vocalFP / totalFP;
+        const double nonVocalPercentage = 100.0 * summary.nonVocalFP / totalFP;
+        std::cout << "Percentage of false positives in vocal windows: " << vocalPercentage << "%\n";
+        std::cout << "Percentage of false positives in non-vocal windows: " << nonVocalPercentage << "%\n";
+    }
+
+    const double vocalAverage = (summary.vocalWindowCount > 0)
+        ? static_cast<double>(summary.vocalFP) / summary.vocalWindowCount : 0.0;
+    const double nonVocalAverage = (summary.nonVocalWindowCount > 0)
+        ? static_cast<double>(summary.nonVocalFP) / summary.nonVocalWindowCount : 0.0;
+    std::cout << "Average false positives per vocal window: " << vocalAverage << "\n";
+    std::cout << "Average false positives per non-vocal window: " << nonVocalAverage << "\n";
 }
