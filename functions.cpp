@@ -423,3 +423,43 @@ std::vector<songWindow> runSongWindowAnalysis(const std::vector<Note>& originalN
 
     return windows;
 }
+
+void songWindow::markVocal()
+{
+    (TP+FN > 0)? hasVocal = true : hasVocal = false;
+}
+
+void markVocalWindows(std::vector<songWindow>& windows)
+{
+    for (auto& window : windows)
+        window.markVocal();
+}
+
+double percentageFPinVocalWindows(const std::vector<songWindow>& windows)
+{
+    int totalFP = 0;
+    int vocalFP = 0;
+    for (const auto& window : windows)
+    {
+        totalFP += window.FP;
+        if (window.hasVocal)
+            vocalFP += window.FP;
+    }
+    return (totalFP > 0) ? static_cast<double>(vocalFP) / totalFP : 0.0;
+}
+
+// percentage of false positives in non-vocal windows = 100 - %FP in vocal windows
+
+double averageFPperWindow(const std::vector<songWindow>& windows, bool Vocal)
+{
+    int totalFP = 0;
+    int count = 0;
+    for (const auto& window : windows)
+    {
+        if (Vocal && !window.hasVocal)
+            continue;
+        totalFP += window.FP;
+        ++count;
+    }
+    return (count > 0) ? static_cast<double>(totalFP) / count : 0.0;
+}
