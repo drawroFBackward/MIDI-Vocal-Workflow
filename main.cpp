@@ -48,6 +48,29 @@ int wmain(int argc, wchar_t* argv[])
             report.addResult(result);
         }
         report.printReport();
+        // Song Window Analysis Summary for 千本桜
+        juce::String original;
+        juce::String benchmark;
+        for (const auto& pair : filePairs)
+        {
+            if (pair.original.contains("千本桜"))
+            {
+                original = pair.original;
+                benchmark = pair.benchmark;
+                break;
+            }
+
+        }
+        std::vector<Note> originalNotes = extractNotes(readMidiFile(original));
+        std::vector<Note> benchmarkNotes = extractNotes(readMidiFile(benchmark));
+        std::vector<std::size_t> selectedIndices = selectNotes(originalNotes);
+        std::vector<songWindow> windows = runSongWindowAnalysis(originalNotes, benchmarkNotes, selectedIndices, 20, getSongLength(readMidiFile(original), readMidiFile(benchmark)));
+        SongWindowSummary summary = summarizeSongWindows(windows);
+        std::cout << "Vocal windows: " << summary.vocalWindowCount << "\n";
+        std::cout << "Non-vocal windows: " << summary.nonVocalWindowCount << "\n";
+        std::cout << "FP in vocal windows: " << summary.vocalFP << "\n";
+        std::cout << "FP in non-vocal windows: " << summary.nonVocalFP << "\n";
+        printSongWindowAnalysis(windows);
     }
     catch (const std::exception& e)
     {
