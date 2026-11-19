@@ -139,6 +139,8 @@ struct PitchContinuityResult
     int pitchDifference;
 };
 
+int getPitchDifference(const Note& note, const std::vector<int>& previousPitches);
+
 std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note>& originalNotes);
 
 // Single-file vocal-note export workflow

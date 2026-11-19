@@ -515,6 +515,20 @@ void printSongWindowAnalysis(const std::vector<songWindow>& windows)
 // -----------------------------------------------------------------------------
 // Pitch continuity analysis (evaluation only)
 // -----------------------------------------------------------------------------
+int getPitchDifference(const Note& note, const std::vector<int>& previousPitches)
+{
+    if (previousPitches.empty())
+        return 0;
+    int minDifference = std::abs(note.pitch - previousPitches[0]);
+    for (std::size_t i = 1; i < previousPitches.size(); ++i)
+    {
+        int diff = std::abs(note.pitch - previousPitches[i]);
+        if (diff < minDifference)
+            minDifference = diff;
+    }
+    return minDifference;
+}
+
 std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note>& originalNotes)
 {
     std::vector<PitchContinuityResult> results;
@@ -522,26 +536,22 @@ std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note
     std::sort(originalNotes.begin(), originalNotes.end(), [](const Note& a, const Note& b) {
         return a.startTick < b.startTick;
     });
-    double lastTick = -1.0;
-    std::vector<Note*> previousNotes; // Points to previous notes in originalNotes with the same start tick
+    double previousTick = -1.0;
+    double currentTick = originalNotes.empty() ? throw std::runtime_error("No notes available") : originalNotes[0].startTick;
+    std::vector<int> pitchesOfPreviousNotes;
+    std::vector<int> pitchesOfCurrentNotes;
     for (std::size_t i = 0; i < originalNotes.size(); ++i)
     {
         const Note& note = originalNotes[i];
-        if (lastTick < 0)
+        // Add the current note's pitch to the list of pitches for the current tick. If the note belongs to a new tick, clear the previous pitches.
+        (currentTick == note.startTick)? pitchesOfCurrentNotes.push_back(note.pitch) : 
+        (pitchesOfPreviousNotes = pitchesOfCurrentNotes, pitchesOfCurrentNotes.clear(), pitchesOfCurrentNotes.push_back(note.pitch));
+        // Set pitch diff for first note(s) at the initial tick
+        (previousTick < 0) ? results.push_back({note, 0}) : results.push_back({note, getPitchDifference(note, pitchesOfPreviousNotes)});
+        if (currentTick < note.startTick)
         {
-            lastTick = note.startTick; // Initialize lastTick with the start tick of the first note
-        }
-        
-        if (lastTick == note.startTick)
-        {
-            previousNotes.push_back(&results.back().note);
-        }
-        
-        
-
-        if(lastTick < note.startTick)
-        {
-            lastTick = note.startTick;
+            previousTick = currentTick; // Update previous tick to the old current tick
+            currentTick = note.startTick;// Update current tick to the new note's start tick
         }
     }
     return results;
