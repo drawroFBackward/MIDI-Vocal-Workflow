@@ -513,6 +513,41 @@ void printSongWindowAnalysis(const std::vector<songWindow>& windows)
 }
 
 // -----------------------------------------------------------------------------
+// Pitch continuity analysis (evaluation only)
+// -----------------------------------------------------------------------------
+std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note>& originalNotes)
+{
+    std::vector<PitchContinuityResult> results;
+    // Sort notes by start tick to ensure chronological order
+    std::sort(originalNotes.begin(), originalNotes.end(), [](const Note& a, const Note& b) {
+        return a.startTick < b.startTick;
+    });
+    double lastTick = -1.0;
+    std::vector<Note*> previousNotes; // Points to previous notes in originalNotes with the same start tick
+    for (std::size_t i = 0; i < originalNotes.size(); ++i)
+    {
+        const Note& note = originalNotes[i];
+        if (lastTick < 0)
+        {
+            lastTick = note.startTick; // Initialize lastTick with the start tick of the first note
+        }
+        
+        if (lastTick == note.startTick)
+        {
+            previousNotes.push_back(&results.back().note);
+        }
+        
+        
+
+        if(lastTick < note.startTick)
+        {
+            lastTick = note.startTick;
+        }
+    }
+    return results;
+}
+
+// -----------------------------------------------------------------------------
 // Single-file vocal-note export workflow
 // -----------------------------------------------------------------------------
 

@@ -131,6 +131,16 @@ double averageFPperWindow(const std::vector<songWindow>& windows, bool Vocal = t
 
 void printSongWindowAnalysis(const std::vector<songWindow>& windows);
 
+// Pitch continuity analysis (evaluation only)
+// Checks for pitch differences between notes in the original MIDI file
+struct PitchContinuityResult
+{
+    Note note;
+    int pitchDifference;
+};
+
+std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note>& originalNotes);
+
 // Single-file vocal-note export workflow
 
 // Writes Vocal_<original filename> in the current working directory.
