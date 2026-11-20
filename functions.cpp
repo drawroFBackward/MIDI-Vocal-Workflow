@@ -531,7 +531,7 @@ std::optional<int> getPitchDifference(const Note& note, const std::vector<int>& 
 
 std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note>& originalNotes)
 {
-    std::vector<PitchContinuityResult> results(originalNotes.size());
+    std::vector<PitchContinuityResult> results;
     // Create and sort a vector of indices of Notes
     std::vector<std::size_t> noteIndices(originalNotes.size());
     std::iota(noteIndices.begin(), noteIndices.end(), 0);
@@ -551,7 +551,7 @@ std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note
             pitchesOfCurrentNotes.clear();
         }
         pitchesOfCurrentNotes.push_back(note.pitch);
-        results[index] = {note, getPitchDifference(note, pitchesOfPreviousNotes)};
+        results.push_back(PitchContinuityResult(index, getPitchDifference(note, pitchesOfPreviousNotes)));
     }
     return results;
 }

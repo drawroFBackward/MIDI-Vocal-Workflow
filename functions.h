@@ -6,6 +6,7 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <exception>
 #include <cmath>
+#include <optional>
 #include "melody.h"
 
 // MIDI file access and conversion
@@ -135,8 +136,10 @@ void printSongWindowAnalysis(const std::vector<songWindow>& windows);
 // Checks for pitch differences between notes in the original MIDI file
 struct PitchContinuityResult
 {
-    Note note;
+    std::size_t noteIndex;
     std::optional<int> pitchDifference;
+    PitchContinuityResult(std::size_t index, std::optional<int> difference)
+        : noteIndex(index), pitchDifference(difference) {}
 };
 
 std::optional<int> getPitchDifference(const Note& note, const std::vector<int>& previousPitches);
