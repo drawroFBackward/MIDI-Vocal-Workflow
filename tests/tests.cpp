@@ -1234,3 +1234,51 @@ void songWindowSummaryTest::runTest()
         expect(output.find("Percentage of false positives in vocal windows: N/A") != std::string::npos);
     });
 }
+
+namespace
+{
+    class PitchContinuitySelectionTest final : public juce::UnitTest
+    {
+    public:
+        PitchContinuitySelectionTest() : juce::UnitTest("Pitch continuity selection") {}
+
+        void runTest() override
+        {
+            beginTest("Keep missing scores and scores at the three-semitone limit");
+            const std::vector<Note> thresholdNotes{
+                {60, 80, 0, 1, 100.0, 50.0},
+                {59, 80, 0, 1, 200.0, 50.0},
+                {63, 80, 0, 1, 200.0, 50.0},
+                {64, 80, 0, 1, 200.0, 50.0}
+            };
+            const std::vector<std::size_t> expectedThresholdIndices{0, 2};
+            auto thresholdIndices = selectNotes(thresholdNotes);
+            std::sort(thresholdIndices.begin(), thresholdIndices.end());
+            expect(thresholdIndices == expectedThresholdIndices,
+                   "Expected only the original indices of pitches 60 and 63");
+
+            beginTest("Keep both candidates when source order differs from onset order");
+            const std::vector<Note> outOfOrderNotes{
+                {63, 80, 0, 1, 200.0, 50.0},
+                {60, 80, 0, 1, 100.0, 50.0}
+            };
+            const std::vector<std::size_t> expectedOutOfOrderIndices{0, 1};
+            auto outOfOrderIndices = selectNotes(outOfOrderNotes);
+            std::sort(outOfOrderIndices.begin(), outOfOrderIndices.end());
+            expect(outOfOrderIndices == expectedOutOfOrderIndices,
+                   "Expected both original indices to survive");
+
+            beginTest("Empty input returns an empty selection");
+            try
+            {
+                expect(selectNotes({}).empty(), "Expected no selected indices");
+            }
+            catch (const std::exception& error)
+            {
+                expect(false, juce::String("Unexpected exception: ") + error.what());
+            }
+        }
+    };
+
+    PitchContinuitySelectionTest pitchContinuitySelectionTest;
+}
