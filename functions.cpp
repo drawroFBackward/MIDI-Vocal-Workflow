@@ -565,7 +565,9 @@ std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note
     std::sort(noteIndices.begin(), noteIndices.end(), [&originalNotes](std::size_t a, std::size_t b) {
         return originalNotes[a].startTick < originalNotes[b].startTick;
     });
-    double currentTick = originalNotes.empty() ? throw std::runtime_error("No notes available") : originalNotes[noteIndices[0]].startTick;
+    if (originalNotes.empty())
+        return results;
+    double currentTick = originalNotes[noteIndices[0]].startTick;
     std::vector<int> pitchesOfPreviousNotes;
     std::vector<int> pitchesOfCurrentNotes;
     for (std::size_t index : noteIndices)
