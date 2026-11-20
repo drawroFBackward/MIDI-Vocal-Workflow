@@ -515,10 +515,10 @@ void printSongWindowAnalysis(const std::vector<songWindow>& windows)
 // -----------------------------------------------------------------------------
 // Pitch continuity analysis (evaluation only)
 // -----------------------------------------------------------------------------
-int getPitchDifference(const Note& note, const std::vector<int>& previousPitches)
+std::optional<int> getPitchDifference(const Note& note, const std::vector<int>& previousPitches)
 {
     if (previousPitches.empty())
-        return 0;
+        return std::nullopt;
     int minDifference = std::abs(note.pitch - previousPitches[0]);
     for (std::size_t i = 1; i < previousPitches.size(); ++i)
     {
@@ -531,15 +531,13 @@ int getPitchDifference(const Note& note, const std::vector<int>& previousPitches
 
 std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note>& originalNotes)
 {
-    std::vector<PitchContinuityResult> results;
-    results.reserve(originalNotes.size());
+    std::vector<PitchContinuityResult> results(originalNotes.size());
     // Create and sort a vector of indices of Notes
     std::vector<std::size_t> noteIndices(originalNotes.size());
     std::iota(noteIndices.begin(), noteIndices.end(), 0);
     std::sort(noteIndices.begin(), noteIndices.end(), [&originalNotes](std::size_t a, std::size_t b) {
         return originalNotes[a].startTick < originalNotes[b].startTick;
     });
-    double previousTick = -1.0;
     double currentTick = originalNotes.empty() ? throw std::runtime_error("No notes available") : originalNotes[noteIndices[0]].startTick;
     std::vector<int> pitchesOfPreviousNotes;
     std::vector<int> pitchesOfCurrentNotes;
@@ -548,13 +546,12 @@ std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note
         const Note& note = originalNotes[index];
         if (currentTick < note.startTick) // We are working on a new tick group
         {
-            previousTick = currentTick; // Update previous tick to the old current tick
             currentTick = note.startTick;// Update current tick to the new note's start tick
             pitchesOfPreviousNotes = pitchesOfCurrentNotes;
             pitchesOfCurrentNotes.clear();
         }
         pitchesOfCurrentNotes.push_back(note.pitch);
-        (previousTick < 0) ? results.insert(results.begin() + index, {note, 0}) : results.insert(results.begin() + index, {note, getPitchDifference(note, pitchesOfPreviousNotes)});
+        results[index] = {note, getPitchDifference(note, pitchesOfPreviousNotes)};
     }
     return results;
 }

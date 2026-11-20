@@ -136,10 +136,10 @@ void printSongWindowAnalysis(const std::vector<songWindow>& windows);
 struct PitchContinuityResult
 {
     Note note;
-    int pitchDifference;
+    std::optional<int> pitchDifference;
 };
 
-int getPitchDifference(const Note& note, const std::vector<int>& previousPitches);
+std::optional<int> getPitchDifference(const Note& note, const std::vector<int>& previousPitches);
 
 std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note>& originalNotes);
 
