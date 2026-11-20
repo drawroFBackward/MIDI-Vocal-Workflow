@@ -26,6 +26,8 @@ void exportMidiFile(const juce::MidiFile& midiFile, const juce::String& path);
 // Vocal-note selection
 // Indices refer to originalNotes; the current baseline uses pitch >= 60.
 
+std::vector<std::size_t> selectByVocalContinuity(const std::vector<Note>& notes, const int maxPitchDifference = 3);
+
 std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPitch);
 
 std::vector<std::size_t> selectNotes(const std::vector<Note>& notes);
@@ -132,7 +134,7 @@ double averageFPperWindow(const std::vector<songWindow>& windows, bool Vocal = t
 
 void printSongWindowAnalysis(const std::vector<songWindow>& windows);
 
-// Pitch continuity analysis (evaluation only)
+// Pitch continuity analysis
 // Checks for pitch differences between notes in the original MIDI file
 struct PitchContinuityResult
 {

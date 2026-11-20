@@ -117,6 +117,22 @@ void exportMidiFile(const juce::MidiFile& midiFile, const juce::String& path)
 // Vocal-note selection
 // -----------------------------------------------------------------------------
 
+std::vector<std::size_t> selectByVocalContinuity(const std::vector<Note>& notes, const int maxPitchDifference)
+{
+    std::vector<std::size_t> selectedIndices;
+    std::vector<PitchContinuityResult> results;
+    results = analyzePitchContinuity(notes);
+    for (const auto& result : results)
+    {
+        if (!result.pitchDifference || *result.pitchDifference <= maxPitchDifference)
+        {
+            selectedIndices.push_back(result.noteIndex);
+        }
+    }
+    return selectedIndices;
+}
+
+
 std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPitch)
 {
     std::vector<std::size_t> selectedIndices;
@@ -132,7 +148,13 @@ std::vector<std::size_t> selectByPitch(const std::vector<Note>& notes, int minPi
 
 std::vector<std::size_t> selectNotes(const std::vector<Note>& notes)
 {
-    std::vector<std::size_t> selectedIndices = selectByPitch(notes, 60);
+    std::vector<std::size_t> pitchIndices = selectByPitch(notes, 60);
+    std::vector<std::size_t> continuityIndices = selectByVocalContinuity(notes);
+    std::vector<std::size_t> selectedIndices;
+    std::set_intersection(pitchIndices.begin(), pitchIndices.end(),
+                          continuityIndices.begin(), continuityIndices.end(),
+                          std::back_inserter(selectedIndices));
+
     // Add more selection in future
     return selectedIndices;
 }
