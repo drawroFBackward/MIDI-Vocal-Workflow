@@ -532,6 +532,7 @@ int getPitchDifference(const Note& note, const std::vector<int>& previousPitches
 std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note>& originalNotes)
 {
     std::vector<PitchContinuityResult> results;
+    results.reserve(originalNotes.size());
     // Create and sort a vector of indices of Notes
     std::vector<std::size_t> noteIndices(originalNotes.size());
     std::iota(noteIndices.begin(), noteIndices.end(), 0);
@@ -539,7 +540,7 @@ std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note
         return originalNotes[a].startTick < originalNotes[b].startTick;
     });
     double previousTick = -1.0;
-    double currentTick = originalNotes.empty() ? throw std::runtime_error("No notes available") : originalNotes[0].startTick;
+    double currentTick = originalNotes.empty() ? throw std::runtime_error("No notes available") : originalNotes[noteIndices[0]].startTick;
     std::vector<int> pitchesOfPreviousNotes;
     std::vector<int> pitchesOfCurrentNotes;
     for (std::size_t index : noteIndices)
@@ -551,13 +552,9 @@ std::vector<PitchContinuityResult> analyzePitchContinuity(const std::vector<Note
             currentTick = note.startTick;// Update current tick to the new note's start tick
             pitchesOfPreviousNotes = pitchesOfCurrentNotes;
             pitchesOfCurrentNotes.clear();
-            pitchesOfCurrentNotes.push_back(note.pitch);
         }
-        else // We are working on the same tick group
-        {
-            pitchesOfCurrentNotes.push_back(note.pitch);
-        }
-        (previousTick < 0) ? results.push_back({note, 0}) : results.push_back({note, getPitchDifference(note, pitchesOfPreviousNotes)});
+        pitchesOfCurrentNotes.push_back(note.pitch);
+        (previousTick < 0) ? results.insert(results.begin() + index, {note, 0}) : results.insert(results.begin() + index, {note, getPitchDifference(note, pitchesOfPreviousNotes)});
     }
     return results;
 }
