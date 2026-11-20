@@ -151,9 +151,14 @@ std::vector<std::size_t> selectNotes(const std::vector<Note>& notes)
     std::vector<std::size_t> pitchIndices = selectByPitch(notes, 60);
     std::vector<std::size_t> continuityIndices = selectByVocalContinuity(notes);
     std::vector<std::size_t> selectedIndices;
-    std::set_intersection(pitchIndices.begin(), pitchIndices.end(),
-                          continuityIndices.begin(), continuityIndices.end(),
-                          std::back_inserter(selectedIndices));
+    for (std::size_t i = 0; i < notes.size(); ++i)
+    {
+        if (std::find(pitchIndices.begin(), pitchIndices.end(), i) != pitchIndices.end() &&
+            std::find(continuityIndices.begin(), continuityIndices.end(), i) != continuityIndices.end())
+        {
+            selectedIndices.push_back(i);
+        }
+    }
 
     // Add more selection in future
     return selectedIndices;
